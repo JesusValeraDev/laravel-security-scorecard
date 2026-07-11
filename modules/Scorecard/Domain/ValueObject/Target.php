@@ -26,8 +26,14 @@ final readonly class Target
             throw new InvalidArgumentException('URL is required.');
         }
 
-        // Default to https when the user omits the scheme.
-        if (! preg_match('#^https?://#i', $input)) {
+        // Reject a foreign scheme up front. Prepending https:// to "ftp://host" would
+        // otherwise smuggle it through as the host "ftp".
+        if (preg_match('#^([a-z][a-z0-9+.-]*)://#i', $input, $matches) === 1) {
+            if (! in_array(strtolower($matches[1]), ['http', 'https'], true)) {
+                throw new InvalidArgumentException('Only http and https URLs can be scanned.');
+            }
+        } else {
+            // Default to https when the user omits the scheme.
             $input = 'https://'.$input;
         }
 
@@ -39,16 +45,39 @@ final readonly class Target
 
         $scheme = strtolower($parts['scheme'] ?? 'https');
 
-        if (! in_array($scheme, ['http', 'https'], true)) {
-            throw new InvalidArgumentException('Only http and https URLs can be scanned.');
+        // parse_url keeps IPv6 literals bracketed ("[::1]"); store the bare address so
+        // that IP-based guards can actually match it.
+        $host = trim(strtolower($parts['host']), '[]');
+
+        if (! self::isHostname($host) && filter_var($host, FILTER_VALIDATE_IP) === false) {
+            throw new InvalidArgumentException('Enter a full domain, like myapp.com.');
         }
 
-        return new self($scheme, strtolower($parts['host']), $parts['port'] ?? null);
+        return new self($scheme, $host, $parts['port'] ?? null);
+    }
+
+    /**
+     * A scannable name needs at least two labels and an alphabetic TLD. A bare word like
+     * "test123" is not a site we could ever reach, so it must never become a scan.
+     */
+    private static function isHostname(string $host): bool
+    {
+        if (strlen($host) > 253) {
+            return false;
+        }
+
+        return preg_match(
+            '/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/',
+            $host
+        ) === 1;
     }
 
     public function origin(): string
     {
-        $origin = $this->scheme.'://'.$this->host;
+        // Re-wrap IPv6 literals, which a URL requires to be bracketed.
+        $host = str_contains($this->host, ':') ? '['.$this->host.']' : $this->host;
+
+        $origin = $this->scheme.'://'.$host;
 
         if ($this->port !== null) {
             $origin .= ':'.$this->port;

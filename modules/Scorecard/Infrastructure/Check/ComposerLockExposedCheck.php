@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Scorecard\Infrastructure\Check;
 
-use Illuminate\Support\Facades\Http;
 use Modules\Scorecard\Domain\Check\Check;
 use Modules\Scorecard\Domain\ValueObject\Finding;
 use Modules\Scorecard\Domain\ValueObject\Severity;
 use Modules\Scorecard\Domain\ValueObject\Target;
+use Modules\Scorecard\Infrastructure\Http\Client\ProbeClient;
 use Throwable;
 
 /**
@@ -16,8 +16,10 @@ use Throwable;
  * every backend dependency — a precise CVE shopping list for an attacker. Confirmed
  * by the file's distinctive JSON signature, not a bare 200.
  */
-final class ComposerLockExposedCheck implements Check
+final readonly class ComposerLockExposedCheck implements Check
 {
+    public function __construct(private ProbeClient $client) {}
+
     public function id(): string
     {
         return 'composer-lock-exposed';
@@ -28,10 +30,16 @@ final class ComposerLockExposedCheck implements Check
         return 'composer.lock is not public';
     }
 
+    /** @return list<string> */
+    public function probes(): array
+    {
+        return ['/composer.lock'];
+    }
+
     public function run(Target $target): ?Finding
     {
         try {
-            $response = Http::timeout(8)->get($target->url('composer.lock'));
+            $response = $this->client->get($target->url('composer.lock'));
         } catch (Throwable) {
             return null;
         }

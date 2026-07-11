@@ -28,6 +28,34 @@ final readonly class ScanRunner
     }
 
     /**
+     * The checks in run order, so the UI can show what is pending, running and done.
+     *
+     * @return list<string>
+     */
+    public function checkTitles(): array
+    {
+        return array_map(static fn (Check $check): string => $check->title(), $this->checks);
+    }
+
+    /**
+     * Every check, with the requests it issues — the source for the published "what we
+     * request" list.
+     *
+     * @return list<CheckManifestEntry>
+     */
+    public function manifest(): array
+    {
+        return array_map(
+            static fn (Check $check): CheckManifestEntry => new CheckManifestEntry(
+                id: $check->id(),
+                title: $check->title(),
+                probes: $check->probes(),
+            ),
+            $this->checks,
+        );
+    }
+
+    /**
      * @param  (callable(int $done, int $total, ?string $currentTitle): void)|null  $onProgress
      */
     public function run(Target $target, ?callable $onProgress = null): ScanResult

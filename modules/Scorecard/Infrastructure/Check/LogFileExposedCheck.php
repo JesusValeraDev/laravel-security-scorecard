@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace Modules\Scorecard\Infrastructure\Check;
 
-use Illuminate\Support\Facades\Http;
 use Modules\Scorecard\Domain\Check\Check;
 use Modules\Scorecard\Domain\ValueObject\Finding;
 use Modules\Scorecard\Domain\ValueObject\Severity;
 use Modules\Scorecard\Domain\ValueObject\Target;
+use Modules\Scorecard\Infrastructure\Http\Client\ProbeClient;
 use Throwable;
 
 /**
  * Detects a publicly readable Laravel log file, which routinely contains stack traces,
  * SQL, and leaked secrets/PII. Confirmed by the distinctive log line signature.
  */
-final class LogFileExposedCheck implements Check
+final readonly class LogFileExposedCheck implements Check
 {
+    public function __construct(private ProbeClient $client) {}
+
     public function id(): string
     {
         return 'log-file-exposed';
@@ -27,10 +29,16 @@ final class LogFileExposedCheck implements Check
         return 'Application log is not public';
     }
 
+    /** @return list<string> */
+    public function probes(): array
+    {
+        return ['/storage/logs/laravel.log'];
+    }
+
     public function run(Target $target): ?Finding
     {
         try {
-            $response = Http::timeout(8)->get($target->url('storage/logs/laravel.log'));
+            $response = $this->client->get($target->url('storage/logs/laravel.log'));
         } catch (Throwable) {
             return null;
         }

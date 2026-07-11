@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Scorecard\Infrastructure\Check;
 
-use Illuminate\Support\Facades\Http;
 use Modules\Scorecard\Domain\Check\Check;
 use Modules\Scorecard\Domain\ValueObject\Finding;
 use Modules\Scorecard\Domain\ValueObject\Severity;
 use Modules\Scorecard\Domain\ValueObject\Target;
+use Modules\Scorecard\Infrastructure\Http\Client\ProbeClient;
 use Throwable;
 
 /**
@@ -16,8 +16,10 @@ use Throwable;
  * CVE-2021-3129 remote code execution bug. Detection is by presence only: we issue
  * a bare GET and never send a solution payload.
  */
-final class IgnitionExposedCheck implements Check
+final readonly class IgnitionExposedCheck implements Check
 {
+    public function __construct(private ProbeClient $client) {}
+
     public function id(): string
     {
         return 'ignition-exposed';
@@ -28,12 +30,18 @@ final class IgnitionExposedCheck implements Check
         return 'Ignition RCE endpoint is not reachable';
     }
 
+    /** @return list<string> */
+    public function probes(): array
+    {
+        return ['/_ignition/execute-solution'];
+    }
+
     public function run(Target $target): ?Finding
     {
         try {
             // A bare GET. The route only accepts POST, so a reachable endpoint answers
             // 405 Method Not Allowed; a patched/absent one answers 404. No payload sent.
-            $response = Http::timeout(8)->get($target->url('_ignition/execute-solution'));
+            $response = $this->client->get($target->url('_ignition/execute-solution'));
         } catch (Throwable) {
             return null;
         }

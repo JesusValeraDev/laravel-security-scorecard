@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace Modules\Scorecard\Infrastructure\Check;
 
-use Illuminate\Support\Facades\Http;
 use Modules\Scorecard\Domain\Check\Check;
 use Modules\Scorecard\Domain\ValueObject\Finding;
 use Modules\Scorecard\Domain\ValueObject\Severity;
 use Modules\Scorecard\Domain\ValueObject\Target;
+use Modules\Scorecard\Infrastructure\Http\Client\ProbeClient;
 use Throwable;
 
 /**
  * Detects an unauthenticated Laravel Pulse dashboard, which exposes application
  * performance data — slow queries, exceptions, slow requests, and active users.
  */
-final class PulseExposedCheck implements Check
+final readonly class PulseExposedCheck implements Check
 {
+    public function __construct(private ProbeClient $client) {}
+
     public function id(): string
     {
         return 'pulse-exposed';
@@ -27,10 +29,16 @@ final class PulseExposedCheck implements Check
         return 'Pulse is not publicly exposed';
     }
 
+    /** @return list<string> */
+    public function probes(): array
+    {
+        return ['/pulse'];
+    }
+
     public function run(Target $target): ?Finding
     {
         try {
-            $response = Http::timeout(8)->get($target->url('pulse'));
+            $response = $this->client->get($target->url('pulse'));
         } catch (Throwable) {
             return null;
         }

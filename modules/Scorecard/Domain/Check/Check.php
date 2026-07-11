@@ -20,5 +20,13 @@ interface Check
     /** Human-readable name shown in the "what we checked" list. */
     public function title(): string;
 
+    /**
+     * The request paths this check issues, so the UI can publish the complete list of what
+     * the scanner asks for without anyone re-typing it by hand.
+     *
+     * @return list<string>
+     */
+    public function probes(): array;
+
     public function run(Target $target): ?Finding;
 }

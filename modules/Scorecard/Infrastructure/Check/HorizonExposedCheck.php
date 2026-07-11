@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace Modules\Scorecard\Infrastructure\Check;
 
-use Illuminate\Support\Facades\Http;
 use Modules\Scorecard\Domain\Check\Check;
 use Modules\Scorecard\Domain\ValueObject\Finding;
 use Modules\Scorecard\Domain\ValueObject\Severity;
 use Modules\Scorecard\Domain\ValueObject\Target;
+use Modules\Scorecard\Infrastructure\Http\Client\ProbeClient;
 use Throwable;
 
 /**
  * Detects an unauthenticated Laravel Horizon dashboard, which exposes queue internals
  * and lets anyone retry or delete jobs.
  */
-final class HorizonExposedCheck implements Check
+final readonly class HorizonExposedCheck implements Check
 {
+    public function __construct(private ProbeClient $client) {}
+
     public function id(): string
     {
         return 'horizon-exposed';
@@ -27,10 +29,16 @@ final class HorizonExposedCheck implements Check
         return 'Horizon is not publicly exposed';
     }
 
+    /** @return list<string> */
+    public function probes(): array
+    {
+        return ['/horizon/api/stats'];
+    }
+
     public function run(Target $target): ?Finding
     {
         try {
-            $response = Http::timeout(8)->get($target->url('horizon/api/stats'));
+            $response = $this->client->get($target->url('horizon/api/stats'));
         } catch (Throwable) {
             return null;
         }

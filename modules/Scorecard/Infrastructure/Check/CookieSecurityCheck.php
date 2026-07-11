@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Scorecard\Infrastructure\Check;
 
-use Illuminate\Support\Facades\Http;
 use Modules\Scorecard\Domain\Check\Check;
 use Modules\Scorecard\Domain\ValueObject\Finding;
 use Modules\Scorecard\Domain\ValueObject\Severity;
 use Modules\Scorecard\Domain\ValueObject\Target;
+use Modules\Scorecard\Infrastructure\Http\Client\ProbeClient;
 use Throwable;
 
 /**
@@ -16,8 +16,10 @@ use Throwable;
  * or HttpOnly is a real session-hijacking risk. The XSRF-TOKEN cookie is intentionally
  * readable by JavaScript, so it is deliberately ignored here.
  */
-final class CookieSecurityCheck implements Check
+final readonly class CookieSecurityCheck implements Check
 {
+    public function __construct(private ProbeClient $client) {}
+
     public function id(): string
     {
         return 'cookie-security';
@@ -28,10 +30,16 @@ final class CookieSecurityCheck implements Check
         return 'Session cookie is Secure and HttpOnly';
     }
 
+    /** @return list<string> */
+    public function probes(): array
+    {
+        return ['/'];
+    }
+
     public function run(Target $target): ?Finding
     {
         try {
-            $response = Http::timeout(8)->get($target->url('/'));
+            $response = $this->client->get($target->url('/'));
         } catch (Throwable) {
             return null;
         }

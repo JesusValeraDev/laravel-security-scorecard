@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace Modules\Scorecard\Infrastructure\Check;
 
-use Illuminate\Support\Facades\Http;
 use Modules\Scorecard\Domain\Check\Check;
 use Modules\Scorecard\Domain\ValueObject\Finding;
 use Modules\Scorecard\Domain\ValueObject\Severity;
 use Modules\Scorecard\Domain\ValueObject\Target;
+use Modules\Scorecard\Infrastructure\Http\Client\ProbeClient;
 use Throwable;
 
 /**
  * Detects a publicly readable .env file. Confirmed by matching real Laravel env
  * keys in the response body — a 200 alone is not enough (catch-all routes exist).
  */
-final class EnvFileExposedCheck implements Check
+final readonly class EnvFileExposedCheck implements Check
 {
+    public function __construct(private ProbeClient $client) {}
+
     public function id(): string
     {
         return 'env-file-exposed';
@@ -27,10 +29,16 @@ final class EnvFileExposedCheck implements Check
         return 'Environment file (.env) is not public';
     }
 
+    /** @return list<string> */
+    public function probes(): array
+    {
+        return ['/.env'];
+    }
+
     public function run(Target $target): ?Finding
     {
         try {
-            $response = Http::timeout(8)->get($target->url('.env'));
+            $response = $this->client->get($target->url('.env'));
         } catch (Throwable) {
             return null;
         }

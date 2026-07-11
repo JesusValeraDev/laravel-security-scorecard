@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace Modules\Scorecard\Infrastructure\Check;
 
-use Illuminate\Support\Facades\Http;
 use Modules\Scorecard\Domain\Check\Check;
 use Modules\Scorecard\Domain\ValueObject\Finding;
 use Modules\Scorecard\Domain\ValueObject\Severity;
 use Modules\Scorecard\Domain\ValueObject\Target;
+use Modules\Scorecard\Infrastructure\Http\Client\ProbeClient;
 use Throwable;
 
 /**
  * Detects an unauthenticated Laravel Telescope dashboard, which exposes every
  * request, query, job, and payload flowing through the app.
  */
-final class TelescopeExposedCheck implements Check
+final readonly class TelescopeExposedCheck implements Check
 {
+    public function __construct(private ProbeClient $client) {}
+
     public function id(): string
     {
         return 'telescope-exposed';
@@ -27,10 +29,16 @@ final class TelescopeExposedCheck implements Check
         return 'Telescope is not publicly exposed';
     }
 
+    /** @return list<string> */
+    public function probes(): array
+    {
+        return ['/telescope/requests'];
+    }
+
     public function run(Target $target): ?Finding
     {
         try {
-            $response = Http::timeout(8)->get($target->url('telescope/requests'));
+            $response = $this->client->get($target->url('telescope/requests'));
         } catch (Throwable) {
             return null;
         }

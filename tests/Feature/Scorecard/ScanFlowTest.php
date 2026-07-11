@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Scorecard;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
@@ -18,6 +19,58 @@ use Tests\TestCase;
 final class ScanFlowTest extends TestCase
 {
     use RefreshDatabase;
+
+    #[Test]
+    public function it_refuses_an_empty_submission(): void
+    {
+        // The button is disabled while the field is empty, but the server must not rely on that.
+        Http::fake();
+
+        Livewire::test(ScanForm::class)
+            ->set('url', '   ')
+            ->call('scan')
+            ->assertHasErrors('url');
+
+        $this->assertSame(0, ScanModel::query()->count());
+        Http::assertNothingSent();
+    }
+
+    #[Test]
+    public function it_refuses_a_bare_word_that_is_not_a_url(): void
+    {
+        Http::fake();
+
+        Livewire::test(ScanForm::class)
+            ->set('url', 'test123')
+            ->call('scan')
+            ->assertHasErrors('url');
+
+        $this->assertSame(0, ScanModel::query()->count());
+        Http::assertNothingSent();
+    }
+
+    #[Test]
+    public function it_fails_the_scan_rather_than_grading_a_site_that_never_answered(): void
+    {
+        // Every check would swallow the connection error and report nothing, which used to
+        // hand an unreachable site a clean A.
+        Http::fake(fn () => throw new ConnectionException('Could not resolve host.'));
+
+        $scan = ScanModel::query()->create([
+            'url' => 'https://offline-app.com',
+            'host' => 'offline-app.com',
+            'status' => 'pending',
+            'checks_total' => 13,
+        ]);
+
+        new RunScan((string) $scan->id)->handle();
+
+        $scan->refresh();
+
+        $this->assertSame('failed', $scan->status);
+        $this->assertNull($scan->grade_letter);
+        $this->assertStringContainsString('no response', (string) $scan->error);
+    }
 
     #[Test]
     public function it_runs_a_scan_from_the_form_and_shows_the_report_card(): void
@@ -41,7 +94,7 @@ final class ScanFlowTest extends TestCase
 
         $this->get(route('report', $scan))
             ->assertOk()
-            ->assertSee('Scorecard for')
+            ->assertSee('What we found')
             ->assertSee('exposed-app.com')
             ->assertSee('.env file is publicly downloadable');
     }
@@ -59,10 +112,11 @@ final class ScanFlowTest extends TestCase
         ]);
 
         Livewire::test(ScanReport::class, ['scan' => $scan])
-            ->assertSee('Scanning example.com')
+            ->assertSee('Scanning')
+            ->assertSee('example.com')
             ->assertSee('Telescope is not publicly exposed')
-            ->assertSee('5 of 13 checks')
-            ->assertDontSee('Scorecard for');
+            ->assertSee('5 / 13 checks')
+            ->assertDontSee('What we found');
 
         $this->assertSame(38, $scan->progressPercent());
     }

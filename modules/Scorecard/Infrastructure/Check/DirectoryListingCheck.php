@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace Modules\Scorecard\Infrastructure\Check;
 
-use Illuminate\Support\Facades\Http;
 use Modules\Scorecard\Domain\Check\Check;
 use Modules\Scorecard\Domain\ValueObject\Finding;
 use Modules\Scorecard\Domain\ValueObject\Severity;
 use Modules\Scorecard\Domain\ValueObject\Target;
+use Modules\Scorecard\Infrastructure\Http\Client\ProbeClient;
 use Throwable;
 
 /**
  * Detects web-server directory listing (autoindex), which exposes the file layout of
  * a directory. Confirmed by the unmistakable "Index of /..." autoindex signature.
  */
-final class DirectoryListingCheck implements Check
+final readonly class DirectoryListingCheck implements Check
 {
+    public function __construct(private ProbeClient $client) {}
+
     private const array PROBE_PATHS = ['storage', 'vendor', 'assets', 'uploads'];
 
     public function id(): string
@@ -29,11 +31,17 @@ final class DirectoryListingCheck implements Check
         return 'Directory listing is disabled';
     }
 
+    /** @return list<string> */
+    public function probes(): array
+    {
+        return array_map(static fn (string $path): string => "/$path/", self::PROBE_PATHS);
+    }
+
     public function run(Target $target): ?Finding
     {
         foreach (self::PROBE_PATHS as $path) {
             try {
-                $response = Http::timeout(6)->get($target->url($path.'/'));
+                $response = $this->client->get($target->url($path.'/'), timeout: 6);
             } catch (Throwable) {
                 continue;
             }

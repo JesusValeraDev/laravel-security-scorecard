@@ -12,6 +12,7 @@ use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Modules\Scorecard\Application\ScanRunner;
 use Modules\Scorecard\Domain\ValueObject\Target;
+use Modules\Scorecard\Infrastructure\Http\Client\PublicHostGuard;
 use Modules\Scorecard\Infrastructure\Persistence\Eloquent\Model\ScanModel;
 use Modules\Scorecard\Infrastructure\Queue\RunScan;
 
@@ -33,7 +34,8 @@ class ScanForm extends Component
             return;
         }
 
-        if (! $target->isPubliclyRoutable()) {
+        // Resolves the host too: a public-looking name can still point at a private address.
+        if (! app(PublicHostGuard::class)->isPublic($target->origin())) {
             $this->addError('url', 'We can only scan public sites, not local or private hosts.');
 
             return;
@@ -63,8 +65,56 @@ class ScanForm extends Component
         return $this->redirect(route('report', $scan), navigate: true);
     }
 
+    /**
+     * Plain-English consequence per check. The requests themselves come from the checks, so
+     * this map only supplies wording — a check with no entry here falls back to its title,
+     * and a test asserts every registered check is covered.
+     */
+    private const array REVEALS = [
+        'env-file-exposed' => 'Your app key, database password and third-party secrets.',
+        'git-directory-exposed' => 'Your full source history, clonable by anyone.',
+        'composer-lock-exposed' => 'The exact version of every dependency you run.',
+        'log-file-exposed' => 'Stack traces, SQL queries and request data.',
+        'ignition-exposed' => 'The debug endpoint behind CVE-2021-3129.',
+        'telescope-exposed' => 'Every request, query, job and mail you handle.',
+        'horizon-exposed' => 'Your queue workload, and control of its workers.',
+        'pulse-exposed' => 'Slow queries, exceptions and app internals.',
+        'directory-listing' => 'Browsable file listings of your web root.',
+        'https-redirect' => 'Whether plain HTTP is redirected up to HTTPS.',
+        'cookie-security' => 'Whether the session cookie is Secure, HttpOnly and SameSite.',
+        'server-version-disclosure' => 'Banners naming the exact version of your server software.',
+        'security-headers' => 'Security headers: HSTS, CSP, frame and content-type options.',
+    ];
+
+    /**
+     * The published "what we request" list, generated from the registered checks so it cannot
+     * drift from the requests the scanner actually sends. Checks that share a request share a
+     * card, because that is one request answered once.
+     *
+     * @return list<CheckCard>
+     */
+    public function checkCards(): array
+    {
+        /** @var array<string, array{requests: list<string>, reveals: list<string>}> $grouped */
+        $grouped = [];
+
+        foreach (app(ScanRunner::class)->manifest() as $entry) {
+            $key = implode(' ', $entry->probes);
+
+            $grouped[$key]['requests'] = $entry->probes;
+            $grouped[$key]['reveals'][] = self::REVEALS[$entry->id] ?? $entry->title;
+        }
+
+        return array_values(array_map(
+            static fn (array $group): CheckCard => new CheckCard($group['requests'], $group['reveals']),
+            $grouped,
+        ));
+    }
+
     public function render(): Factory|View
     {
-        return view('livewire.scan-form');
+        return view('livewire.scan-form', [
+            'checks' => $this->checkCards(),
+        ]);
     }
 }

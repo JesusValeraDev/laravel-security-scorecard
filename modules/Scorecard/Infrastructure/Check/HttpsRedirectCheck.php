@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Scorecard\Infrastructure\Check;
 
-use Illuminate\Support\Facades\Http;
 use Modules\Scorecard\Domain\Check\Check;
 use Modules\Scorecard\Domain\ValueObject\Finding;
 use Modules\Scorecard\Domain\ValueObject\Severity;
 use Modules\Scorecard\Domain\ValueObject\Target;
+use Modules\Scorecard\Infrastructure\Http\Client\ProbeClient;
 use Throwable;
 
 /**
@@ -16,8 +16,10 @@ use Throwable;
  * (200) or redirects to another http location, credentials and cookies can travel
  * in cleartext.
  */
-final class HttpsRedirectCheck implements Check
+final readonly class HttpsRedirectCheck implements Check
 {
+    public function __construct(private ProbeClient $client) {}
+
     public function id(): string
     {
         return 'https-redirect';
@@ -28,12 +30,18 @@ final class HttpsRedirectCheck implements Check
         return 'Plain HTTP redirects to HTTPS';
     }
 
+    /** @return list<string> */
+    public function probes(): array
+    {
+        return ['/'];
+    }
+
     public function run(Target $target): ?Finding
     {
         $httpUrl = 'http://'.$target->host.($target->port ? ':'.$target->port : '').'/';
 
         try {
-            $response = Http::timeout(8)->withoutRedirecting()->get($httpUrl);
+            $response = $this->client->getWithoutRedirecting($httpUrl);
         } catch (Throwable) {
             // No http listener at all is fine — nothing to downgrade to.
             return null;
