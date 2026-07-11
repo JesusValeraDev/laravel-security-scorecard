@@ -1,0 +1,6 @@
+#!/bin/bash
+set -o pipefail
+echo "Running pre-push checks (full suite)..."
+composer test || { echo "Backend checks failed. Run 'composer fix' / 'composer test'."; exit 1; }
+echo "All pre-push checks passed!"
+exit 0

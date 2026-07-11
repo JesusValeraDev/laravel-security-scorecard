@@ -1,0 +1,18 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - modules/
+
+    level: max
+
+    excludePaths:
+        - modules/*/Infrastructure/Http/Livewire/*
+        - modules/*/Infrastructure/Persistence/Eloquent/Model/*
+        - modules/*/Infrastructure/Mail/*
+        - modules/*/Infrastructure/Queue/*
+        - modules/*/Infrastructure/Console/*
+
+    ignoreErrors:
+        - identifier: cast.string

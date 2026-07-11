@@ -1,0 +1,27 @@
+#!/bin/bash
+set -o pipefail
+
+echo "Running pre-commit checks..."
+
+TMPDIR=$(mktemp -d)
+trap 'rm -rf $TMPDIR' EXIT
+
+( ./vendor/bin/pint --test 2>&1; exit "${PIPESTATUS[0]}" ) > "$TMPDIR/pint.out" 2>&1 & PID_PINT=$!
+( ./vendor/bin/rector --dry-run 2>&1; exit "${PIPESTATUS[0]}" ) > "$TMPDIR/rector.out" 2>&1 & PID_RECTOR=$!
+( ./vendor/bin/phpstan analyse --memory-limit=512M 2>&1; exit "${PIPESTATUS[0]}" ) > "$TMPDIR/phpstan.out" 2>&1 & PID_PHPSTAN=$!
+
+wait $PID_PINT;    EXIT_PINT=$?
+wait $PID_RECTOR;  EXIT_RECTOR=$?
+wait $PID_PHPSTAN; EXIT_PHPSTAN=$?
+
+FAILED=0
+[ $EXIT_PINT -ne 0 ]    && { echo; echo "Pint failed!"; cat "$TMPDIR/pint.out"; echo "Run 'composer fix'."; FAILED=1; }
+[ $EXIT_RECTOR -ne 0 ]  && { echo; echo "Rector failed!"; cat "$TMPDIR/rector.out"; echo "Run 'composer rector:fix'."; FAILED=1; }
+[ $EXIT_PHPSTAN -ne 0 ] && { echo; echo "PHPStan failed!"; cat "$TMPDIR/phpstan.out"; FAILED=1; }
+[ $FAILED -ne 0 ] && exit 1
+
+echo "→ Running tests..."
+./vendor/bin/phpunit > "$TMPDIR/phpunit.out" 2>&1 || { echo; echo "Tests failed!"; cat "$TMPDIR/phpunit.out"; exit 1; }
+
+echo "All pre-commit checks passed!"
+exit 0
