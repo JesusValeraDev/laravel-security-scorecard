@@ -6,7 +6,6 @@ namespace Modules\Scorecard\Infrastructure\Persistence\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Scorecard\Domain\ValueObject\Finding;
 use Modules\Scorecard\Domain\ValueObject\Grade;
 use Modules\Scorecard\Domain\ValueObject\ScanResult;
@@ -55,12 +54,6 @@ class ScanModel extends Model
             'checks_done' => 'integer',
             'completed_at' => 'datetime',
         ];
-    }
-
-    /** @return BelongsTo<MonitorModel, ScanModel> */
-    public function monitor(): BelongsTo
-    {
-        return $this->belongsTo(MonitorModel::class);
     }
 
     public function isPending(): bool

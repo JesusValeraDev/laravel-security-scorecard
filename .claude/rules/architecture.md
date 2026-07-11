@@ -14,17 +14,14 @@ modules/{Module}/
 │   └── ScanRunner.php    # runs Checks against a Target → ScanResult
 └── Infrastructure/   # Laravel adapters
     ├── Check/            # concrete passive checks (HTTP)
-    ├── Persistence/Eloquent/Model/   # ScanModel, MonitorModel
-    ├── Http/Livewire/    # ScanForm, ScanReport, ManageMonitor
+    ├── Persistence/Eloquent/Model/   # ScanModel
+    ├── Http/Livewire/    # ScanForm, ScanReport
     ├── Queue/            # RunScan job
-    ├── Console/          # RescanMonitors command
-    ├── Mail/             # GradeDroppedMail
-    ├── Verification/     # DomainVerifier, TxtRecordLookup
     └── Provider/         # {Module}ServiceProvider
 ```
 
 Modules register in `bootstrap/providers.php`. Shipped modules: `Scorecard` (scanning,
-grading, report UI, monitoring) and `Shared` (`Email`, `Uuid`).
+grading, report UI) and `Shared` (`Email`, `Uuid`).
 
 ## Dependency rule
 
@@ -40,15 +37,13 @@ Domain → Application → Infrastructure, **never the reverse**. Concretely: `S
 2. `RunScan` sets status `scanning`, resolves `ScanRunner` from the container, and runs
    each `Check`, writing per-check progress to the row.
 3. `ScanReport` polls (`wire:poll`) the row and renders the graded report.
-4. For monitors, `RunScan` calls `MonitorModel::evaluateAfterScan()` → emails on a
-   grade drop when `scorecard.alerts_enabled` is true.
 
 ## Design principles
 
 - **Passive and safe** — GET-only probes; no payloads or exploitation.
 - **Precision over coverage** — a check fires only on concrete response evidence.
 - **Checks are pure and isolated** — one class + one test each; faked `Http` in tests.
-- **Free by default** — `sync` queue, `file` cache/session, `log` mail, alerts off.
+- **Free by default** — `sync` queue, `file` cache/session, `log` mail.
 
 ## Key decisions
 

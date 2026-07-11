@@ -55,9 +55,6 @@ class RunScan implements ShouldQueue
             });
 
             $scan->recordResult($result);
-
-            // If this scan came from a monitor, alert the owner on a grade drop.
-            $scan->monitor?->evaluateAfterScan($scan->fresh());
         } catch (Throwable $e) {
             $scan->update([
                 'status' => 'failed',

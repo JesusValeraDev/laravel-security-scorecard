@@ -20,8 +20,6 @@ use Modules\Scorecard\Infrastructure\Check\PulseExposedCheck;
 use Modules\Scorecard\Infrastructure\Check\SecurityHeadersCheck;
 use Modules\Scorecard\Infrastructure\Check\ServerVersionDisclosureCheck;
 use Modules\Scorecard\Infrastructure\Check\TelescopeExposedCheck;
-use Modules\Scorecard\Infrastructure\Console\RescanMonitors;
-use Modules\Scorecard\Infrastructure\Http\Livewire\ManageMonitor;
 use Modules\Scorecard\Infrastructure\Http\Livewire\ScanForm;
 use Modules\Scorecard\Infrastructure\Http\Livewire\ScanReport;
 
@@ -53,10 +51,5 @@ final class ScorecardServiceProvider extends ServiceProvider
     {
         Livewire::component('scan-form', ScanForm::class);
         Livewire::component('scan-report', ScanReport::class);
-        Livewire::component('manage-monitor', ManageMonitor::class);
-
-        if ($this->app->runningInConsole()) {
-            $this->commands([RescanMonitors::class]);
-        }
     }
 }

@@ -31,13 +31,13 @@ Source lives in `modules/`, autoloaded as `Modules\`. Each module has three laye
 modules/{Module}/
 ├── Domain/           # Pure PHP: value objects, contracts (no framework)
 ├── Application/      # Use cases (e.g. ScanRunner)
-└── Infrastructure/   # Laravel: checks, Eloquent, Livewire, jobs, mail, providers
+└── Infrastructure/   # Laravel: checks, Eloquent, Livewire, jobs, providers
 ```
 
 Dependency rule: Domain → Application → Infrastructure (never the reverse). Modules
 register in `bootstrap/providers.php`.
 
-- **`Scorecard`** — scanning, grading, report UI, monitoring.
+- **`Scorecard`** — scanning, grading, report UI.
 - **`Shared`** — cross-cutting value objects (`Email`, `Uuid`).
 
 ## Core concepts
@@ -47,15 +47,11 @@ register in `bootstrap/providers.php`.
   service provider, so `ScanRunner` (Application) depends only on the Domain contract.
 - **Scan** — a queued `RunScan` job runs the checks, streams per-check progress, and
   persists an A–F graded result (Livewire polls it for a live view).
-- **Monitor** — a watched host + email. Re-scanned by `monitors:rescan`; alerts on a
-  grade drop (gated behind `scorecard.alerts_enabled`). Ownership-verified before any
-  scheduled scan; managed/unsubscribed via a tokenized page.
 
 ## Guardrails (non-negotiable)
 
 - Passive only: GET requests, no payloads, no exploitation.
 - Detect by response-body evidence, never a bare 200.
-- Scheduled monitoring requires domain-ownership verification.
 - Precision over coverage: every critical finding must be certain.
 
 ## Commands

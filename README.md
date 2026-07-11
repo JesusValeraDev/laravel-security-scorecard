@@ -35,9 +35,7 @@ runs cheaply and offline.
 | Low | Directory listing | Browsable file indexes |
 | Low | Version banners | `Server` / `X-Powered-By` disclosure |
 
-Findings roll up into an **A–F grade** (any single critical caps it at F). Enter an
-email to **monitor** a site: it's re-scanned on a schedule and — once you enable
-alerts — you're emailed the moment the grade drops.
+Findings roll up into an **A–F grade** (any single critical caps it at F).
 
 ---
 
@@ -50,7 +48,7 @@ autoloaded under the `Modules\` namespace.
 modules/{Module}/
 ├── Domain/           # Pure PHP: value objects, contracts (no framework)
 ├── Application/      # Use cases (e.g. ScanRunner)
-└── Infrastructure/   # Laravel: checks, Eloquent, Livewire, jobs, mail, providers
+└── Infrastructure/   # Laravel: checks, Eloquent, Livewire, jobs, providers
 ```
 
 **Dependency rule:** Domain → Application → Infrastructure (never the reverse). The
@@ -59,7 +57,7 @@ are assembled in the module's service provider.
 
 Modules are registered in `bootstrap/providers.php`. The app ships with:
 
-- **`Scorecard`** — scanning, grading, the report UI, and monitoring.
+- **`Scorecard`** — scanning, grading, and the report UI.
 - **`Shared`** — cross-cutting value objects (`Email`, `Uuid`).
 
 **Stack:** PHP 8.4+ · Laravel 13 · Livewire + Blade + Tailwind CSS 4 · SQLite (local) /
@@ -99,12 +97,8 @@ Redis, no mail provider:
 |---------|---------|---------------|
 | Queue | `sync` | Scans run in-request; no worker process |
 | Cache / session | `file` | No database/Redis store needed |
-| Mail | `log` + alerts **off** | Grade-drop emails are gated behind a flag |
+| Mail | `log` | No mail provider needed |
 | Database | SQLite | Zero-config locally |
-
-Monitoring still works with alerts off — sites are re-scanned and grade history is
-recorded; only the *email* is suppressed. To turn emails on later, configure a (free)
-mail transport and set `SCORECARD_ALERTS_ENABLED=true`.
 
 ### Deploying to Laravel Cloud
 
@@ -114,9 +108,6 @@ mail transport and set `SCORECARD_ALERTS_ENABLED=true`.
 3. Keep `QUEUE_CONNECTION=sync` to avoid running a worker.
 4. Health checks are served at `/up`.
 
-Scheduled re-scans (`monitors:rescan`, hourly) run via Laravel Cloud's scheduler. They
-only send email once `SCORECARD_ALERTS_ENABLED=true` and a mail transport is set.
-
 ---
 
 ## Guardrails
@@ -124,8 +115,6 @@ only send email once `SCORECARD_ALERTS_ENABLED=true` and a mail transport is set
 - **Passive only** — `GET` requests a crawler could make; never a payload or exploit.
 - **Precision over coverage** — a finding fires only on concrete evidence (e.g. real
   env markers in the body, not a bare `200`).
-- **Ownership-gated monitoring** — a monitor is only scanned after the domain owner
-  proves control via a DNS TXT record, a homepage meta tag, or a well-known file.
 - **SSRF hygiene** — local/private/`.test` hosts are refused.
 
 ---
