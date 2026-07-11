@@ -1,132 +1,155 @@
 @php
-    $grade = $scan->grade_letter ?? '–';
-    // Signature element palette: the grade medallion shifts hue with the verdict.
-    $gradeStyle = match ($grade) {
-        'A', 'B' => ['ring' => 'ring-emerald-500/25', 'text' => 'text-emerald-600 dark:text-emerald-400', 'bg' => 'bg-emerald-50 dark:bg-emerald-950/40'],
-        'C' => ['ring' => 'ring-amber-500/25', 'text' => 'text-amber-600 dark:text-amber-400', 'bg' => 'bg-amber-50 dark:bg-amber-950/40'],
-        'D' => ['ring' => 'ring-orange-500/25', 'text' => 'text-orange-600 dark:text-orange-400', 'bg' => 'bg-orange-50 dark:bg-orange-950/40'],
-        default => ['ring' => 'ring-red-500/25', 'text' => 'text-red-600 dark:text-red-400', 'bg' => 'bg-red-50 dark:bg-red-950/40'],
+    $grade = $scan->grade_letter;
+
+    $gradeTone = match ($grade) {
+        'A', 'B' => 'text-pass',
+        'C', 'D' => 'text-warn',
+        default => 'text-fail',
     };
 
-    $severityStyle = fn (string $s) => match ($s) {
-        'critical' => 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300',
-        'high' => 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900 dark:bg-orange-950/40 dark:text-orange-300',
-        'medium' => 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300',
-        default => 'border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400',
+    $severityTone = fn (string $s) => match ($s) {
+        'critical', 'high' => 'text-fail',
+        'medium' => 'text-warn',
+        default => 'text-muted',
     };
 
     $findings = $scan->findings ?? [];
     $passed = $scan->passed ?? [];
+    $done = $scan->checks_done ?? 0;
+    $total = $scan->checks_total ?? count($checkTitles);
 @endphp
 
-<div @if ($scan->isRunning()) wire:poll.750ms @endif class="py-8">
+<div @if ($scan->isRunning()) wire:poll.750ms @endif class="pt-20 sm:pt-24">
     @if ($scan->isRunning())
-        {{-- Live progress view --}}
-        <div class="mx-auto max-w-md py-10 text-center">
-            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-50 ring-1 ring-zinc-100 dark:bg-zinc-900 dark:ring-zinc-800">
-                <svg class="h-6 w-6 animate-spin text-[#F53003]" viewBox="0 0 24 24" fill="none">
-                    <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"/>
-                    <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"/>
-                </svg>
-            </div>
+        {{-- Live: the checks are assertions, ticking off as each response lands. --}}
+        <section aria-labelledby="scanning-heading">
+            <h2 id="scanning-heading" class="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+                @if ($scan->isPending()) Queued @else Scanning @endif
+            </h2>
 
-            <h1 class="mt-5 text-xl font-bold tracking-tight">Scanning {{ $scan->host }}</h1>
-            <p class="mt-1.5 h-5 text-sm text-zinc-500 dark:text-zinc-400">
-                @if ($scan->isPending())
-                    Queued — starting in a moment…
-                @elseif ($scan->current_check)
-                    Checking: {{ $scan->current_check }}
-                @else
-                    Finishing up…
-                @endif
-            </p>
+            <h1 class="mt-5 break-all text-4xl font-medium tracking-[-0.03em]">{{ $scan->host }}</h1>
 
-            <div class="mt-6">
-                <div class="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                    <div class="h-full rounded-full bg-[#F53003] transition-[width] duration-500 ease-out"
-                         style="width: {{ max(4, $scan->progressPercent()) }}%"></div>
-                </div>
-                <p class="mt-2 text-xs font-medium text-zinc-400">
-                    {{ $scan->checks_done }} of {{ $scan->checks_total ?? '–' }} checks
-                </p>
-            </div>
-        </div>
-    @elseif ($scan->isFailed())
-        <div class="rounded-2xl border border-zinc-200 p-10 text-center dark:border-zinc-800">
-            <p class="text-lg font-semibold">We couldn’t finish that scan</p>
-            <p class="mx-auto mt-2 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-                {{ $scan->error ?? 'The site may be unreachable. Check the URL and try again.' }}
-            </p>
-            <a href="{{ route('home') }}" wire:navigate class="mt-6 inline-block rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">
-                Try another site
-            </a>
-        </div>
-    @else
-        {{-- Scorecard header: the grade medallion --}}
-        <div class="flex flex-col items-center gap-6 rounded-2xl border border-zinc-100 bg-zinc-50/50 p-8 text-center dark:border-zinc-900 dark:bg-zinc-900/30 sm:flex-row sm:text-left">
-            <div class="flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl ring-4 {{ $gradeStyle['ring'] }} {{ $gradeStyle['bg'] }}">
-                <span class="text-6xl font-extrabold tracking-tighter {{ $gradeStyle['text'] }}">{{ $grade }}</span>
-            </div>
-            <div class="flex-1">
-                <p class="text-xs font-medium uppercase tracking-wide text-zinc-400">Scorecard for</p>
-                <h1 class="mt-0.5 break-all text-2xl font-bold tracking-tight">{{ $scan->host }}</h1>
-                <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                    @if (count($findings) === 0)
-                        No issues found across {{ count($passed) }} checks. Clean bill of health.
-                    @else
-                        <span class="font-semibold text-zinc-700 dark:text-zinc-200">{{ count($findings) }} issue{{ count($findings) === 1 ? '' : 's' }}</span>
-                        found · {{ count($passed) }} check{{ count($passed) === 1 ? '' : 's' }} passed · scored {{ $scan->grade_score }}/100
-                    @endif
-                </p>
-            </div>
-        </div>
+            <p class="mt-3 font-mono text-[13px] text-muted">{{ $done }} / {{ $total }} checks</p>
 
-        {{-- Findings --}}
-        @if (count($findings) > 0)
-            <div class="mt-8 space-y-4">
-                @foreach ($findings as $finding)
-                    <article class="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
-                        <div class="flex items-start justify-between gap-3">
-                            <h2 class="text-base font-semibold leading-snug">{{ $finding['title'] }}</h2>
-                            <span class="shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide {{ $severityStyle($finding['severity']) }}">
-                                {{ $finding['severity'] }}
-                            </span>
-                        </div>
-                        <p class="mt-2.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{{ $finding['explanation'] }}</p>
-                        <div class="mt-3.5 rounded-xl bg-zinc-50 p-3.5 dark:bg-zinc-900/60">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-zinc-400">How to fix</p>
-                            <p class="mt-1 text-sm leading-relaxed text-zinc-700 dark:text-zinc-200">{{ $finding['fix'] }}</p>
-                        </div>
-                        @if (! empty($finding['evidence']))
-                            <p class="mt-2.5 font-mono text-xs text-zinc-400">{{ $finding['evidence'] }}</p>
-                        @endif
-                    </article>
+            <ul class="mt-10 grid gap-3 md:grid-cols-2" role="list" aria-live="polite">
+                @foreach ($checkTitles as $i => $title)
+                    @php $state = $i < $done ? 'done' : ($i === $done ? 'active' : 'pending'); @endphp
+
+                    <li class="panel flex items-baseline gap-3 p-5 text-[13px] leading-relaxed
+                               {{ $state === 'pending' ? 'text-faint' : 'text-ink' }}
+                               {{ $state === 'active' ? 'working' : '' }}">
+                        <span class="w-3 shrink-0 font-mono text-faint" aria-hidden="true">
+                            {{ $state === 'done' ? '✓' : ($state === 'active' ? '›' : '·') }}
+                        </span>
+                        <span>{{ $title }}</span>
+                    </li>
                 @endforeach
+            </ul>
+        </section>
+    @elseif ($scan->isFailed())
+        <section class="max-w-xl" aria-labelledby="failed-heading">
+            <h2 id="failed-heading" class="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+                Scan failed
+            </h2>
+
+            <h1 class="mt-5 text-3xl font-medium tracking-[-0.03em]">That scan didn’t finish</h1>
+
+            <p class="mt-4 text-[17px] leading-relaxed text-ink">
+                {{ $scan->error ?? 'The site didn’t respond. Check the URL and try again.' }}
+            </p>
+
+            <a href="{{ route('home') }}" wire:navigate
+               class="mt-8 inline-flex h-12 items-center rounded-xl bg-ink px-6 text-sm font-medium text-surface transition hover:bg-ink/85">
+                Scan another site
+            </a>
+        </section>
+    @else
+        {{-- The verdict. The grade is the one thing on this page allowed to carry colour. --}}
+        <header class="rise" aria-labelledby="result-heading">
+            <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+                <h2 id="result-heading" class="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+                    Result
+                </h2>
+                <p class="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+                    Scanned {{ $scan->completed_at?->diffForHumans() }}
+                </p>
             </div>
+
+            <h1 class="mt-5 break-all text-4xl font-medium tracking-[-0.03em] sm:text-5xl">{{ $scan->host }}</h1>
+
+            <div class="mt-10 flex flex-col gap-8 sm:flex-row sm:items-end sm:gap-12">
+                <p class="text-[7rem] font-medium leading-[0.8] tracking-[-0.05em] {{ $gradeTone }}">
+                    {{ $grade }}
+                </p>
+
+                <div class="flex-1">
+                    <x-grade-strip :earned="$grade" />
+
+                    <p class="mt-5 max-w-lg text-[17px] leading-relaxed text-ink">
+                        @if (count($findings) === 0)
+                            Nothing exposed across {{ count($passed) }} checks. Scored
+                            {{ $scan->grade_score }} out of 100.
+                        @else
+                            <span class="font-medium">{{ count($findings) }} issue{{ count($findings) === 1 ? '' : 's' }}</span>
+                            found, {{ count($passed) }} check{{ count($passed) === 1 ? '' : 's' }} passed. Scored
+                            {{ $scan->grade_score }} out of 100.
+                        @endif
+                    </p>
+                </div>
+            </div>
+        </header>
+
+        @if (count($findings) > 0)
+            <section class="mt-20" aria-labelledby="findings-heading">
+                <h2 id="findings-heading" class="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+                    What we found
+                </h2>
+
+                <div class="mt-5 space-y-3">
+                    @foreach ($findings as $i => $finding)
+                        <article class="rise panel p-6 sm:p-8" style="animation-delay: {{ min($i * 50, 250) }}ms">
+                            <p class="font-mono text-[11px] uppercase tracking-[0.14em] {{ $severityTone($finding['severity']) }}">
+                                {{ $finding['severity'] }}
+                            </p>
+
+                            <h3 class="mt-3 text-xl font-medium leading-snug tracking-[-0.02em]">
+                                {{ $finding['title'] }}
+                            </h3>
+
+                            <p class="mt-3 max-w-2xl leading-relaxed text-muted">{{ $finding['explanation'] }}</p>
+
+                            @if (! empty($finding['evidence']))
+                                <p class="mt-4 overflow-x-auto rounded-xl bg-ground px-4 py-3 font-mono text-[12px] leading-relaxed text-muted">
+                                    {{ $finding['evidence'] }}
+                                </p>
+                            @endif
+
+                            <div class="mt-6 border-t border-rule pt-6">
+                                <p class="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">The fix</p>
+                                <p class="mt-3 max-w-2xl text-[17px] leading-relaxed text-ink">{{ $finding['fix'] }}</p>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
         @endif
 
-        {{-- Passed checks --}}
         @if (count($passed) > 0)
-            <div class="mt-8 rounded-2xl border border-zinc-100 p-5 dark:border-zinc-900">
-                <p class="text-xs font-semibold uppercase tracking-wide text-zinc-400">Passed</p>
-                <ul class="mt-3 grid gap-2 sm:grid-cols-2">
+            <section class="mt-16" aria-labelledby="passed-heading">
+                <h2 id="passed-heading" class="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+                    What held up
+                </h2>
+
+                <ul class="mt-5 grid gap-3 md:grid-cols-2" role="list">
                     @foreach ($passed as $title)
-                        <li class="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                            <svg viewBox="0 0 24 24" fill="none" class="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 6L9 17l-5-5"/>
-                            </svg>
-                            {{ $title }}
+                        <li class="panel flex items-baseline gap-3 p-5 text-[13px] leading-relaxed text-muted">
+                            <span class="w-3 shrink-0 font-mono text-pass" aria-hidden="true">✓</span>
+                            <span>{{ $title }}</span>
                         </li>
                     @endforeach
                 </ul>
-            </div>
+            </section>
         @endif
 
-        <div class="mt-8 flex items-center justify-between border-t border-zinc-100 pt-6 dark:border-zinc-900">
-            <p class="text-xs text-zinc-400">Scanned {{ $scan->completed_at?->diffForHumans() }}</p>
-            <a href="{{ route('home') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">
-                Scan another site
-            </a>
-        </div>
     @endif
 </div>

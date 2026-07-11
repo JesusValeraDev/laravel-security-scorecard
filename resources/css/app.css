@@ -4,6 +4,138 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* The interface is monochrome. Cool grey, never warm — this is an instrument, not stationery.
+       The ground is deliberately several steps darker than the surfaces, so every piece of
+       content reads as a lit panel sitting on top of it. */
+    --color-ground: #f9f9f9f9;
+    --color-surface: #ffffff;
+    --color-ink: #0d1215;
+    /* Both greys clear 4.5:1 on the surfaces they sit on. "faint" is quiet, not unreadable. */
+    --color-muted: #3f484f;
+    --color-faint: #5e686f;
+    --color-rule: #d5dbe0;
+
+    /* The one brand colour, used only in the logo lockup. Body UI stays monochrome so the
+       grade verdict below is still the only *content* colour on the page. */
+    --color-brand: #f04d38;
+
+    /* Colour is reserved for a verdict. Nothing decorative may use these. */
+    --color-pass: #1a7a55;
+    --color-warn: #9a6510;
+    --color-fail: #bd3b2f;
+}
+
+@layer base {
+    :root {
+        color-scheme: light;
+    }
+
+    /* Dark theme. A JS shim resolves light/dark/system to a concrete data-theme before paint,
+       so only the resolved "dark" needs overriding here. Same cool-grey monochrome discipline:
+       ground stays the darkest layer, surfaces sit above it, colour is still only a verdict. */
+    :root[data-theme='dark'] {
+        color-scheme: dark;
+
+        --color-ground: #0e1316;
+        --color-surface: #161c20;
+        --color-ink: #eef1f3;
+        --color-muted: #aeb8bf;
+        --color-faint: #7c868d;
+        --color-rule: #293136;
+
+        --color-brand: #f6604a;
+
+        --color-pass: #3ecf8e;
+        --color-warn: #e0a54a;
+        --color-fail: #ff6a5a;
+    }
+
+    /* On dark, an ink-tinted shadow vanishes; lean on a true-black lift plus the border. */
+    :root[data-theme='dark'] .panel {
+        box-shadow:
+            0 1px 2px rgb(0 0 0 / 0.4),
+            0 12px 30px -18px rgb(0 0 0 / 0.7);
+    }
+
+    :root[data-theme='dark'] .chip {
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+    }
+
+    /* Keep Alpine-controlled icons hidden until Alpine resolves which one to show. */
+    [x-cloak] {
+        display: none !important;
+    }
+
+    /* The search bar's shape is the page's shape. Every panel, chip and button is cut from it:
+       same radius, same hairline, same lift off the grey. */
+    .panel {
+        border-radius: 1rem;
+        border: 1px solid var(--color-rule);
+        background-color: var(--color-surface);
+        box-shadow:
+            0 1px 2px rgb(15 20 23 / 0.05),
+            0 10px 28px -18px rgb(15 20 23 / 0.25);
+    }
+
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        border: 1px solid var(--color-rule);
+        background-color: var(--color-surface);
+        box-shadow: 0 1px 2px rgb(15 20 23 / 0.04);
+    }
+
+    ::selection {
+        background-color: var(--color-ink);
+        color: var(--color-ground);
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-ink);
+        outline-offset: 3px;
+    }
+}
+
+@utility rise {
+    animation: rise 0.5s cubic-bezier(0.22, 0.7, 0.3, 1) both;
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* The check currently in flight. The only movement on the page. */
+@utility working {
+    animation: working 1.2s ease-in-out infinite;
+}
+
+@keyframes working {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
 }

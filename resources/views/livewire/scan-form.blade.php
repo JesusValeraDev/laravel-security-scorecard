@@ -1,74 +1,119 @@
-<div class="flex flex-1 flex-col justify-center py-12">
-    <div class="mx-auto w-full max-w-xl text-center">
-        <h1 class="text-balance text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
-            Is your Laravel app
-            <span class="text-[#F53003]">leaking secrets?</span>
+{{-- $checks is generated from the registered checks (ScanForm::checkCards), never hand-listed. --}}
+<div class="pt-20 sm:pt-28">
+    <section class="mx-auto max-w-3xl text-center">
+        <h1 class="rise text-balance text-4xl font-medium leading-[1.1] tracking-[-0.03em] sm:text-[3.25rem]">
+            See what your app hands to strangers.
         </h1>
-        <p class="mx-auto mt-5 max-w-md text-pretty text-base leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Enter your site’s URL for a passive security checkup. We look for exposed
-            <code class="rounded bg-zinc-100 px-1 py-0.5 text-[13px] dark:bg-zinc-900">.env</code> files,
-            open Telescope and Horizon dashboards, and missing headers — then grade you.
+
+        {{-- Says what you get. The safety promise is not repeated here — it closes the page, once,
+             after the request lists have already proved it. --}}
+        <p class="rise mx-auto mt-6 max-w-lg text-pretty leading-relaxed text-muted" style="animation-delay: 60ms">
+            Enter a domain to get a graded report of what your Laravel app is exposing — leaked files,
+            open dashboards, missing headers — and the exact fix for each.
         </p>
 
-        <form wire:submit="scan" class="mx-auto mt-9 max-w-lg">
-            <div class="flex flex-col gap-2.5 sm:flex-row">
-                <div class="relative flex-1">
-                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-zinc-400">
-                        <svg viewBox="0 0 24 24" fill="none" class="h-4.5 w-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
-                        </svg>
-                    </span>
-                    <input
-                        type="text"
-                        wire:model="url"
-                        placeholder="yourapp.com"
-                        autocomplete="off"
-                        autofocus
-                        class="w-full rounded-xl border border-zinc-200 bg-white py-3 pl-10 pr-4 text-[15px] shadow-sm outline-none transition placeholder:text-zinc-400 focus:border-[#F53003] focus:ring-2 focus:ring-[#F53003]/20 dark:border-zinc-800 dark:bg-zinc-900 dark:placeholder:text-zinc-600"
-                    >
-                </div>
+        {{-- The page has one job, so it gets one control. Its shape sets the shape of everything below. --}}
+        <form
+            wire:submit="scan"
+            x-data="{ url: @js($url) }"
+            class="rise mt-10"
+            style="animation-delay: 120ms"
+        >
+            {{-- The bar lifts the same amount whether you point at it or type in it. --}}
+            <div class="panel group flex items-center gap-3 p-2 pl-5 text-left transition hover:shadow-[0_1px_2px_rgb(15_20_23/0.06),0_16px_36px_-18px_rgb(15_20_23/0.4)] focus-within:border-ink/45 focus-within:shadow-[0_1px_2px_rgb(15_20_23/0.06),0_16px_36px_-18px_rgb(15_20_23/0.4)]">
+                {{-- The magnifier is the field's label, so clicking it puts the caret in the field.
+                     It darkens with the field itself, not on its own hover — it is not a button. --}}
+                <label for="scan-url" class="shrink-0 cursor-text text-faint transition group-has-[input:focus]:text-ink">
+                    <span class="sr-only">Domain to scan</span>
+                    <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/><path d="M20 20l-4.3-4.3"/>
+                    </svg>
+                </label>
+
+                <input
+                    id="scan-url"
+                    type="text"
+                    wire:model="url"
+                    x-model="url"
+                    placeholder="myapp.com"
+                    autocomplete="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    autofocus
+                    class="h-12 w-full min-w-0 bg-transparent text-lg outline-none placeholder:text-faint focus-visible:outline-none"
+                >
+
                 <button
                     type="submit"
-                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-900 px-6 py-3 text-[15px] font-semibold text-white shadow-sm transition hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900/30 disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+                    x-bind:disabled="url.trim() === ''"
                     wire:loading.attr="disabled"
                     wire:target="scan"
+                    class="h-12 shrink-0 rounded-xl bg-ink px-6 text-sm font-medium text-surface transition hover:bg-ink/85 disabled:cursor-not-allowed disabled:bg-faint"
                 >
-                    <span wire:loading.remove wire:target="scan">Scan now</span>
-                    <span wire:loading.flex wire:target="scan" class="items-center gap-2">
-                        <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                            <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-                        </svg>
-                        Scanning
-                    </span>
+                    <span wire:loading.remove wire:target="scan">Scan</span>
+                    <span wire:loading wire:target="scan">Starting…</span>
                 </button>
             </div>
+
             @error('url')
-                <p class="mt-2.5 text-left text-sm text-[#F53003]">{{ $message }}</p>
+                <p class="mt-3 text-left text-sm font-medium text-fail">{{ $message }}</p>
             @enderror
         </form>
+    </section>
 
-        <div class="mt-14 grid grid-cols-2 gap-3 text-left sm:grid-cols-3">
-            @foreach ([
-                ['Exposed .env', 'App keys & DB credentials'],
-                ['Exposed .git', 'Your full source history'],
-                ['composer.lock', 'Exact dependency versions'],
-                ['Exposed logs', 'laravel.log stack traces'],
-                ['Ignition RCE', 'CVE-2021-3129 surface'],
-                ['Telescope', 'Every request & query'],
-                ['Horizon', 'Queue control panel'],
-                ['Pulse', 'App performance internals'],
-                ['Directory listing', 'Browsable file indexes'],
-                ['HTTPS enforced', 'Plain HTTP redirects up'],
-                ['Cookie flags', 'Secure, HttpOnly, SameSite'],
-                ['Version banners', 'Server & X-Powered-By'],
-                ['Security headers', 'HSTS, CSP, frame options'],
-            ] as [$name, $desc])
-                <div class="rounded-xl border border-zinc-100 bg-zinc-50/60 px-4 py-3 dark:border-zinc-900 dark:bg-zinc-900/40">
-                    <p class="text-sm font-semibold">{{ $name }}</p>
-                    <p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{{ $desc }}</p>
-                </div>
+    @php
+        // Two truths, two sections: checks that each cost a request of their own, and checks
+        // that cost nothing extra because they all read the same homepage response.
+        $ownRequest = array_values(array_filter($checks, fn ($check) => ! $check->isWide()));
+        $shared = array_values(array_filter($checks, fn ($check) => $check->isWide()));
+    @endphp
+
+    <section class="mt-24" aria-labelledby="requests-heading">
+        <h2 id="requests-heading" class="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+            What we request
+        </h2>
+
+        <ul class="mt-5 grid gap-3 md:grid-cols-3" role="list">
+            @foreach ($ownRequest as $check)
+                <li class="panel flex flex-col gap-2 p-5">
+                    <p class="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[13px] leading-relaxed text-ink">
+                        @foreach ($check->requests as $request)
+                            <span>{{ $request }}</span>
+                        @endforeach
+                    </p>
+                    <p class="text-[13px] leading-relaxed text-muted">{{ $check->reveals[0] }}</p>
+                </li>
             @endforeach
-        </div>
-    </div>
+        </ul>
+    </section>
+
+    {{-- These checks cost no extra request: they all read the one homepage response. --}}
+    @foreach ($shared as $check)
+        <section class="mt-16" aria-labelledby="shared-heading">
+            <h2 id="shared-heading" class="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+                What your homepage answers
+            </h2>
+
+            <ul class="mt-5 grid gap-3 sm:grid-cols-2" role="list">
+                @foreach ($check->reveals as $reveals)
+                    <li class="panel p-5 text-[13px] leading-relaxed text-muted">{{ $reveals }}</li>
+                @endforeach
+            </ul>
+        </section>
+    @endforeach
+
+    {{-- The promise closes the page. Same label-above-content rhythm as every other section;
+         its weight comes from being set in ink, not from a box or an indent. --}}
+    <section class="mt-16 border-t border-rule pt-8" aria-labelledby="promise-heading">
+        <h2 id="promise-heading" class="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+            How we scan
+        </h2>
+
+        <p class="mt-5 max-w-2xl text-[17px] leading-relaxed text-ink">
+            Security Scorecard only requests pages your server
+            <span class="font-medium">already serves to the public</span>.
+            It sends no payloads, submits no forms, exploits nothing, and reports a problem only
+            when the response body proves it.
+        </p>
+    </section>
 </div>

@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Modules\Scorecard\Application\ScanRunner;
 use Modules\Scorecard\Infrastructure\Persistence\Eloquent\Model\ScanModel;
 
 #[Layout('components.layout')]
@@ -32,6 +33,11 @@ class ScanReport extends Component
     {
         return view('livewire.scan-report', [
             'scan' => $this->scan(),
+            'checkTitles' => app(ScanRunner::class)->checkTitles(),
+        ])->layoutData([
+            'title' => 'Scan report · Security Scorecard',
+            // A report can name a site's exposed findings — keep it out of search indexes.
+            'noindex' => true,
         ]);
     }
 }
