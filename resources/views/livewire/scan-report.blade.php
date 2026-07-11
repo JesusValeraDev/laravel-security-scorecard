@@ -184,7 +184,7 @@
                 <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                     We’ll re-scan {{ $scan->host }} on a schedule and email you the moment its grade gets worse.
                 </p>
-                <form wire:submit="watch" class="mt-4 flex flex-col gap-2.5 sm:flex-row">
+                <form wire:submit="startWatching" class="mt-4 flex flex-col gap-2.5 sm:flex-row">
                     <input
                         type="email"
                         wire:model="email"

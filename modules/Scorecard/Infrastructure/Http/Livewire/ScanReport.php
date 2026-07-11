@@ -41,7 +41,7 @@ class ScanReport extends Component
      * unscanned) until the owner proves domain control. The current grade is stored
      * as the baseline so future drops can be detected once verified.
      */
-    public function watch(): void
+    public function startWatching(): void
     {
         $this->validate();
 

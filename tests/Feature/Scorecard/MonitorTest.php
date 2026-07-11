@@ -46,7 +46,7 @@ final class MonitorTest extends TestCase
 
         Livewire::test(ScanReport::class, ['scan' => $scan])
             ->set('email', 'dev@example.com')
-            ->call('watch')
+            ->call('startWatching')
             ->assertHasNoErrors();
 
         $monitor = MonitorModel::query()->firstOrFail();
@@ -65,7 +65,7 @@ final class MonitorTest extends TestCase
 
         $component = Livewire::test(ScanReport::class, ['scan' => $scan])
             ->set('email', 'dev@example.com')
-            ->call('watch');
+            ->call('startWatching');
 
         $monitor = MonitorModel::query()->firstOrFail();
 
@@ -93,7 +93,7 @@ final class MonitorTest extends TestCase
 
         Livewire::test(ScanReport::class, ['scan' => $scan])
             ->set('email', 'dev@example.com')
-            ->call('watch')
+            ->call('startWatching')
             ->call('verify')
             ->assertHasErrors('verify');
 
