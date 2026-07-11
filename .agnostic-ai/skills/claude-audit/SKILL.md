@@ -1,0 +1,64 @@
+---
+name: claude-audit
+description: Audit the .agnostic-ai/ AI harness config (agents, skills, rules, hooks, commands) against the codebase and flag drift
+allowed-tools: Read, Grep, Glob, Bash
+---
+
+# AI Harness Audit
+
+Read-only audit of `.agnostic-ai/` (the source synced into `.claude/`/`.codex/` via `make ai-sync`) for internal consistency with the codebase, then offer to fix.
+
+## 0. Sync Status
+
+Run `make ai-check`. If it reports drift, `.claude/`/`.codex/` are stale — fix via `make ai-sync`, never hand-edit generated files (only `.agnostic-ai/` sources).
+
+## 1. AGNOSTIC_AI.md Accuracy
+
+Read `.agnostic-ai/AGNOSTIC_AI.md` and cross-check:
+
+- **Stack table** — versions/tech match `composer.json` (PHP/Laravel) and `resources/frontend/package.json` (React, Vite, Tailwind, TipTap, Zustand)
+- **Commands** — every `make *` referenced exists in `Makefile` (`make help`)
+- **Rules list** — `backend-*` / `frontend-*` / cross-cutting groupings match `.agnostic-ai/rules/*.md`
+
+## 2. Rules Freshness
+
+For each `.agnostic-ai/rules/*.md`:
+
+- Extract backtick paths matching `modules/`, `resources/`, `docs/`, `tests/`, `app/`, `bootstrap/`
+- **Only check concrete paths** (no `{`/`}`). Skip template patterns like `modules/{Module}/Domain/Entity/`
+- Glob each concrete path — mark STALE if missing
+- Check `architecture.md`, `backend-architecture.md`, `frontend-conventions.md`, `frontend-design-system.md` first (they reference paths that move on renames)
+
+## 3. Skills Integrity
+
+- Glob `.agnostic-ai/skills/*/SKILL.md` — every skill dir must contain one with `name`+`description` frontmatter; `name` must match the dir name
+- Flag dirs without SKILL.md (BROKEN) or missing required fields
+
+## 4. Agents Integrity
+
+- Glob `.agnostic-ai/agents/*.md` — each needs frontmatter `name`, `model` (ideally `description`); `name` must match the filename (sans `.md`)
+- Flag agents whose conventions contradict current code (e.g. "use Lucide React" or `@/components/ui/*` when the frontend uses inline SVG + custom CSS design-system) — DRIFT
+
+## 5. Hooks & Commands
+
+- `.agnostic-ai/hooks/*.yaml` — referenced commands/scripts exist; matcher (Write, Edit, Bash, Stop) still meaningful
+- Glob `.agnostic-ai/commands/*.md` — flag commands referencing dead make targets or paths
+- Check `.agnostic-ai/overlays/` for tool-specific settings that drift from the source
+
+## Output
+
+```
+| Area | Item | Status | Notes |
+|------|------|--------|-------|
+```
+
+| Status | Meaning |
+|--------|---------|
+| OK | Correct and up to date |
+| STALE | Exists but outdated or mismatched |
+| MISSING | Expected but absent |
+| ORPHAN | Exists but not registered/documented |
+| BROKEN | Invalid frontmatter or unreachable reference |
+| DRIFT | Generated target out of sync, or config contradicts the codebase |
+
+After reporting, offer to fix non-OK items in `.agnostic-ai/` sources, then run `make ai-sync`.

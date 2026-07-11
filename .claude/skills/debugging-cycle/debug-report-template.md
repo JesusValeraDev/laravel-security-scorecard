@@ -1,0 +1,26 @@
+# Debug Report
+
+- Case: <YYYY-MM-DD-short-kebab-summary>
+- Scope: <component or flow>
+- Related ticket: <ticket-or-none>
+- Related spec: <feature-dir-or-none>
+- Resolution class: <restore-fix|spec-required|investigation-only>
+- Status: <draft|review-ready|approved|closed>
+
+## Symptom
+
+## Impact and severity
+
+## Reproduction status
+
+## Evidence collected
+
+## Suspected boundary
+
+## Root-cause hypothesis
+
+## Containment or rollback taken
+
+## Recommended next step
+
+## Review notes

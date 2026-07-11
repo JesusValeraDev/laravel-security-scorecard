@@ -1,0 +1,35 @@
+---
+description: Finalize the implementation cycle with tests, commit preparation, PR summary, and Confluence/update notes.
+argument-hint: "[feature-path-or-scope]"
+allowed-tools: Read, Grep, Glob, Bash, Edit, MultiEdit, Write
+disable-model-invocation: true
+---
+
+Run after implementation, adversarial review, and remediation are complete.
+
+Inputs: the active feature's spec/plan/task artifacts; the latest findings report if any; the current diff and available test commands/results; optional `$ARGUMENTS` for a specific feature directory or delivery scope.
+
+Required workflow:
+1. Identify the delivery scope. Use `$ARGUMENTS` if present; otherwise infer the active feature from changed files, findings, and the most relevant Spec Kit artifacts.
+2. Verification: run targeted tests first, then broader regression when the constitution, plan, or changed surface calls for it. Record what ran, passed, failed, and could not run.
+3. Delivery summary: shipped scope, key code changes, findings status, remaining risk. Call out rollback, rollout, migration, or observability notes when the feature requires them.
+4. Commit preparation: draft the exact commit title and body. If the user authorized commits, create it; otherwise present the exact command and message for approval.
+5. Merge request preparation:
+   - Draft a PR title and a structured PR description that includes:
+     - scope
+     - spec/plan/task linkage
+     - verification
+     - findings and remediation summary
+     - rollout or rollback notes
+     - remaining risk or follow-ups
+   - If GitHub integration is available and the user authorized PR creation, create or draft it; otherwise leave a ready-to-paste PR summary or repo-local note.
+   - If the work used a dedicated feature worktree and the PR is now open, tell the user the worktree path still exists and ask whether to remove it. Never remove it automatically unless the user says yes.
+6. Confluence / runbook note: draft the implementation note or runbook update for after merge (problem statement, implementation summary, verification, rollout considerations, operator-facing notes). Publish only if the user asked and the integration is available.
+7. Final handoff: end with a concise checklist of verification, commit, PR, worktree-cleanup, and Confluence/update status, plus remaining approvals or blockers.
+
+Exit criteria:
+- Verification status is explicit
+- Commit output is explicit, created, or ready for approval
+- PR output is explicit, created, or ready for approval
+- Confluence/update summary is explicit, published, or ready for handoff
+- Remaining delivery risk is clearly called out

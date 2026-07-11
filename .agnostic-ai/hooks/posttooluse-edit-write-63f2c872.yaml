@@ -1,0 +1,6 @@
+command:
+    - f=$(printf '%s' "$CLAUDE_TOOL_INPUT" | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'); case "$f" in */vendor/*) ;; *.php) ./vendor/bin/pint --test "$f" 2>&1 | tail -5 && ./vendor/bin/phpstan analyse --no-progress --memory-limit=2G "$f" 2>&1 | tail -10 || echo "[hook] Pint/PHPStan issues on $f - fix before commit" ;; esac
+    - f=$(printf '%s' "$CLAUDE_TOOL_INPUT" | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'); case "$f" in */resources/frontend/src/lib/i18n/*.ts) repo="${f%%/resources/frontend/*}"; node "$repo/.claude/skills/i18n-parity/check.mjs" || echo "[hook] i18n parity mismatch - run node .claude/skills/i18n-parity/check.mjs before PR" ;; esac
+event: PostToolUse
+matcher: Edit|Write
+name: posttooluse-edit-write-63f2c872

@@ -1,0 +1,3 @@
+command: 'changes=$(git status --porcelain 2>/dev/null); if [ -n "$changes" ]; then count=$(echo "$changes" | wc -l | tr -d '' ''); echo "WARNING: $count uncommitted file(s) detected - consider committing before stopping."; echo "$changes" | head -5; if [ "$count" -gt 5 ]; then echo "  ... and $((count - 5)) more"; fi; fi; exit 0'
+event: Stop
+name: stop-uncommitted-changes

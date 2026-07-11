@@ -1,0 +1,4 @@
+command: 'if echo "$CLAUDE_TOOL_INPUT" | grep -qE ''(dd\(|dump\(|var_dump\()''; then echo ''WARNING: Debug statement detected. Remove dd()/dump()/var_dump() before committing.''; fi'
+event: PreToolUse
+matcher: Write
+name: pretooluse-write-f51709be

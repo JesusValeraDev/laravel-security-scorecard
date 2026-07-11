@@ -1,0 +1,81 @@
+# Rename Safety
+
+Cross-codebase renames (entity, route, store, feature, table, env var) are the
+highest-risk change in this repo. The Manuscript->Scorecard rename shipped a
+production outage because a symbol rename missed the literal `/manuscripts` API
+call sites in the frontend store and lacked a DB migration.
+
+A rename is NOT done when the symbols compile. It is done when every layer that
+references the old name - including string literals - is updated, a migration
+exists, and the renamed path is smoke-tested end-to-end.
+
+## Why symbol refactors are not enough
+
+IDE/`rename-symbol` refactors only follow type-resolved references. They are
+blind to:
+
+- String literals (`'/manuscripts'`, `route('manuscripts.show')`, channel names)
+- Cross-language boundaries (PHP class renamed, TS fetch path not)
+- Serialized payloads already in the DB or queue (job class names, cast keys)
+- Generated/built artifacts and config keys
+
+So every rename needs a raw-text sweep in addition to the symbol refactor.
+
+## Step 1 - Full-reference inventory (before editing anything)
+
+Grep the OLD name across every layer. Search all case variants in one pass:
+
+Use the deterministic sweep script (don't hand-craft the rg variants — see the
+`rename-sweep` skill). Pass singular and plural as separate names:
+
+```bash
+.claude/skills/rename-sweep/check.sh inventory old-name old-names
+```
+
+| Layer              | What to grep                                                  |
+|--------------------|---------------------------------------------------------------|
+| Backend code       | class / namespace / method / property names                   |
+| API call sites     | literal URL paths in `*.ts`/`*.tsx` (`/old-name`, `fetch`)    |
+| Route helpers      | `route('old.name')`, `->name('old...')`, named-route lookups  |
+| Frontend stores    | Zustand store names, action names, endpoint strings           |
+| i18n keys          | translation keys + values in all 5 locale files (en/es/fr/de/ar) |
+| Seeders/factories  | factory names, seeded literal strings                         |
+| DB schema          | table names, column names, enum values, index names           |
+| Serialized data    | queued job class names, polymorphic `*_type` values, casts    |
+| Events/broadcast   | event class names, broadcast channel strings                  |
+| Cache keys         | `Cache::remember('old-key', ...)` literals                    |
+| Routes/config/env  | route names, env vars, config keys, `.env.example`            |
+
+Produce the inventory and confirm it before changing anything. Plural vs
+singular bites hardest - `manuscript` and `manuscripts` are different strings.
+
+## Step 2 - Prod-safe migration (mandatory if DB schema changes)
+
+Rename in place - never drop+recreate (data loss):
+
+- Tables: `Schema::rename('old', 'new')`
+- Columns: `$table->renameColumn('old', 'new')`
+- Polymorphic `*_type` rows holding the old FQCN: `UPDATE` them in the migration
+  (and/or register a `Relation::enforceMorphMap`/`morphMap` alias).
+
+Verify the migration runs forward AND has a working `down()`. Existing queued
+jobs serialized with the old class name will fail to deserialize - drain or
+migrate the queue, or keep a class alias until drained.
+
+## Step 3 - Verification gate (before merge)
+
+- All backend + frontend suites green. Renames break test mocks, i18n
+  assertions, and seeders first - fix those as part of the change.
+- Re-run the sweep in gate mode — it must exit 0 (zero hits on the OLD name
+  outside CHANGELOG and migration history):
+  `.claude/skills/rename-sweep/check.sh gate old-name old-names`
+- Smoke-test the renamed API path end-to-end - hit the actual call site from the
+  SPA, not just the route definition.
+- `make lint` passes (Pint + PHPStan + ESLint + tsc) - catches dangling
+  references the grep missed.
+
+## Rollback plan
+
+Before deploying, write down the revert: the `down()` migration, the env-var
+swap, and whether old queued jobs/cache entries must be drained. A rename with
+no rehearsed rollback is not ready to merge.

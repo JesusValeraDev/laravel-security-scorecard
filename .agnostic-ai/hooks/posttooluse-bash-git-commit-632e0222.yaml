@@ -1,0 +1,4 @@
+command: 'echo ''Commit created. Run tests before pushing: ./vendor/bin/phpunit'''
+event: PostToolUse
+matcher: Bash(git commit*)
+name: posttooluse-bash-git-commit-632e0222

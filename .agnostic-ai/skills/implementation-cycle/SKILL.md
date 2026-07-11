@@ -1,0 +1,88 @@
+---
+name: implementation-cycle
+description: Runs the repo's full Spec Kit implementation cycle with approval gates, analysis, delivery, and remediation. Use when the user wants to implement or change behavior in the repo.
+---
+
+Use this skill for requests like `implement JIRA-1234` or `implement retry-safe invoice sync`.
+
+Inputs: a Jira key, issue URL, or freeform request in `$ARGUMENTS`; the repo's Spec Kit bootstrap, constitution, and workflow commands; existing feature artifacts when resuming.
+
+Rules:
+- Repo Spec Kit artifacts are the source of truth; never fork into ad hoc files outside the bootstrapped structure.
+- Prefer configured GitHub/Confluence integrations, but keep repo-local artifacts authoritative.
+- Resume from the current unfinished stage if a spec, plan, tasks, findings report, or delivery notes exist; don't restart unless the user asks for a reset.
+- Stop at each approval gate with the exact approval phrase below, unless the user requested an autonomous run.
+- Route to `/workflow.document-existing` if the request is documenting/reverse-specing existing behavior; to `/workflow.debug` if it's primarily diagnosing a bug/flaky test/regression/failure.
+
+Workflow:
+1. Validate bootstrap:
+   - `.specify/` exists
+   - `.specify/memory/constitution.md` exists (and use `.specify/memory/constitution.effective.md` when present)
+   - `/workflow.brainstorm`, `/workflow.prepare-worktree`, `/workflow.team-run`, `/workflow.attack`, `/workflow.fix`, `/workflow.delivery`, and `/workflow.debug` exist in `.claude/commands`
+2. Classify the request:
+   - Jira key or issue URL ⇒ ticket mode; otherwise => freeform mode.
+   - If nothing meaningful is present and there are no resumable artifacts, stop and explain what is missing.
+   - If `/workflow.classify` is available in `.claude/commands`, run `/workflow.classify $ARGUMENTS` and follow its output:
+       - `direct` (TRIVIAL/SIMPLE): skip steps 3–11. State what will change in 1–2 sentences, make the edit, run tests, summarize. Do not write spec/plan/tasks artifacts unless the user asks.
+       - `sdd` (MODERATE): continue with the full workflow from step 3 onward.
+       - `sdd+brainstorm` (COMPLEX): continue from step 3 but run `/workflow.brainstorm <scope>` before the spec phase.
+       - `clarify-first` (UNCLEAR): ask the one question returned by the classifier, wait for the answer, then re-run classification.
+   - If `/workflow.classify` is not available, continue the full cycle from step 3 (backward-compatible default).
+   - In autonomous mode, log the classification result and continue without stopping for `clarify-first`.
+3. Intake and analysis:
+   - In ticket mode, fetch the Jira ticket and related context when available.
+   - In freeform mode, restate the request as an implementation objective with explicit scope, likely constraints, and assumptions before writing artifacts.
+   - If a `codebase-exploration` skill is available (`.claude/skills/codebase-exploration/SKILL.md`), use its tools for architecture discovery before writing specs. Start with `service_map` for orientation, then use `list_routes`, `model_explorer`, and `database_schema` to understand the affected surface.
+   - If the request is large, ambiguous, brownfield, high-risk, or has multiple plausible implementation directions, run `/workflow.brainstorm <scope>`.
+   - If the request modifies an existing capability and there is no trustworthy current-state spec yet, run `/workflow.document-existing <scope>` first.
+   - If the impacted surface spans 3 or more files, crosses 2 or more subsystems, or clearly requires end-to-end flow tracing, run `/workflow.team-run analysis <scope>` before finalizing the spec update.
+4. Spec phase:
+   - Create or update the spec via the repo's Spec Kit command surface (`/speckit.specify` or equivalent).
+   - Capture scope, non-goals, dependencies, rollout assumptions, open questions, and known risk areas.
+   - If the spec already exists, update it in place rather than duplicating it.
+   - If material ambiguity remains, run `/speckit.clarify` before asking for spec approval.
+5. Spec approval gate:
+   - Summarize scope, major technical decisions, open questions or assumptions, and expected blast radius.
+   - End with: `Spec ready. Reply with "approve spec" to continue or tell me what to change.`
+   - Skip only when autonomous mode was explicitly requested.
+6. Plan phase:
+   - Create or update the implementation plan via `/speckit.plan` or equivalent.
+   - Make verification, rollback, rollout, migration, and observability expectations explicit where relevant.
+7. Plan approval gate:
+   - Summarize implementation order, verification strategy, rollout or rollback notes, and external dependencies.
+   - End with: `Plan ready. Reply with "approve plan" to continue or tell me what to change.`
+8. Tasks phase:
+   - Create or update the task breakdown via `/speckit.tasks` or equivalent.
+   - Make task ordering, dependencies, validation steps, and any parallel-safe work explicit.
+9. Consistency analysis:
+   - Run `/speckit.analyze` before implementation.
+   - Apply any required updates before the final pre-implementation approval.
+10. Task approval gate:
+   - Summarize task order, parallelizable work, high-risk tasks, consistency findings, and required verification.
+   - End with: `Tasks ready. Reply with "approve tasks" to continue or tell me what to change.`
+11. Worktree preparation:
+   - Run `/workflow.prepare-worktree <scope>` for non-trivial implementation work, especially broad, cross-subsystem, brownfield, or risky changes.
+   - Preserve the current environment only when it is already an isolated workspace suitable for the task.
+12. Implementation:
+   - Run `/workflow.team-run implementation <scope>`.
+   - If scope changes materially, update the affected artifact and re-open the relevant approval gate unless autonomous mode was requested.
+13. Security and remediation:
+   - Run `/workflow.attack`.
+   - Run `/workflow.fix` on the resulting findings report.
+14. Delivery:
+   - Run `/workflow.delivery`.
+15. Final status:
+   - Summarize what shipped, what was verified, what remains blocked, and the exact next action if the cycle did not finish.
+
+Resume behavior:
+- On `approve spec`/`approve plan`/`approve tasks`/`continue`/`resume`, inspect feature artifacts and continue from the next unfinished stage.
+- For attack review, remediation, tests, commit/MR prep, or Confluence summary, prefer `/workflow.attack`, `/workflow.fix`, or `/workflow.delivery`.
+- If reframed as diagnosis/flaky behavior/root-cause, prefer `/workflow.debug`; if documenting/reverse-engineering, prefer `/workflow.document-existing`.
+- For freeform-started features, keep the spec and plan as the source of truth instead of re-parsing the original message.
+
+Exit criteria:
+- Spec, plan, and task artifacts in place/updated in the Spec Kit structure.
+- Brainstorming, clarification, and analysis used when ambiguity or risk justified them.
+- Approval gates respected (or bypassed only on explicit autonomous request); implementation reflects approved scope.
+- Adversarial findings reviewed and remediated.
+- Test status, commit status, MR summary, Confluence/update summary, and remaining risk are explicit.

@@ -1,0 +1,178 @@
+---
+name: solid-principles
+description: SOLID principle guidance for refactoring and code review
+---
+
+# SOLID Principles Skill
+
+SOLID guidance for refactoring and code review. Triggers: refactoring, code review, design pattern or structure questions.
+
+## SOLID Overview
+
+| Principle                 | Summary                                     | Key Question                                           |
+|---------------------------|---------------------------------------------|--------------------------------------------------------|
+| **S**ingle Responsibility | One class, one reason to change             | "What is the ONE thing this class does?"               |
+| **O**pen/Closed           | Open for extension, closed for modification | "Can I add behavior without changing existing code?"   |
+| **L**iskov Substitution   | Subtypes must be substitutable              | "Can I use any subclass where the parent is expected?" |
+| **I**nterface Segregation | Many specific interfaces > one general      | "Does every implementer use every method?"             |
+| **D**ependency Inversion  | Depend on abstractions                      | "Am I depending on interfaces or implementations?"     |
+
+---
+
+## Single Responsibility Principle (SRP)
+
+> A class should have only one reason to change.
+
+```php
+// BAD: Validation + Persistence + Notification in one class
+class UserService {
+    public function createUser(array $data): User {
+        $this->validate($data);           // Responsibility 1
+        $this->db->insert('users', $data); // Responsibility 2
+        $this->mailer->send($data['email'], new WelcomeEmail()); // Responsibility 3
+    }
+}
+
+// GOOD: Separate concerns, event-driven
+class CreateUserHandler {
+    public function __invoke(CreateUser $cmd): void {
+        $user = User::create(UserId::generate(), Email::fromString($cmd->email));
+        $this->repository->save($user);
+        $this->events->dispatch(new UserCreated($user->id()));
+    }
+}
+```
+
+---
+
+## Open/Closed Principle (OCP)
+
+> Open for extension, closed for modification.
+
+```php
+// BAD: Must modify to add new payment type
+class PaymentProcessor {
+    public function process(Order $order): void {
+        match ($order->paymentType()) {
+            'credit_card' => $this->processCreditCard($order),
+            'paypal' => $this->processPaypal($order),
+            // Add new types here = modification
+        };
+    }
+}
+
+// GOOD: Extend via interface
+interface PaymentGateway {
+    public function supports(PaymentType $type): bool;
+    public function process(Order $order): PaymentResult;
+}
+
+class PaymentProcessor {
+    public function __construct(private array $gateways) {}
+    public function process(Order $order): PaymentResult {
+        foreach ($this->gateways as $gateway) {
+            if ($gateway->supports($order->paymentType())) {
+                return $gateway->process($order);
+            }
+        }
+    }
+}
+```
+
+---
+
+## Liskov Substitution Principle (LSP)
+
+> Objects of a superclass should be replaceable with objects of its subclasses without breaking behavior.
+
+```php
+// BAD: Square overrides Rectangle behavior unexpectedly
+class Square extends Rectangle {
+    public function setWidth(int $w): void { $this->width = $this->height = $w; } // Breaks LSP!
+}
+
+// GOOD: Separate types implementing common interface
+interface Shape { public function area(): int; }
+final readonly class Rectangle implements Shape { /* width * height */ }
+final readonly class Square implements Shape { /* side * side */ }
+```
+
+---
+
+## Interface Segregation Principle (ISP)
+
+> No client should be forced to depend on methods it doesn't use.
+
+```php
+// BAD: Fat interface forces empty implementations
+interface Worker {
+    public function work(): void;
+    public function eat(): void;
+    public function sleep(): void;
+}
+class Robot implements Worker {
+    public function eat(): void { /* Robots don't eat! */ }
+}
+
+// GOOD: Segregated interfaces
+interface Workable { public function work(): void; }
+interface Eatable { public function eat(): void; }
+class Robot implements Workable { ... }  // Only what it needs
+```
+
+---
+
+## Dependency Inversion Principle (DIP)
+
+> High-level modules should not depend on low-level modules. Both should depend on abstractions.
+
+```php
+// BAD: High-level depends on concrete low-level
+class OrderService {
+    public function __construct() {
+        $this->repository = new MySqlOrderRepository(); // Concrete + instantiation!
+    }
+}
+
+// GOOD: Both depend on abstraction
+interface OrderRepository { public function save(Order $order): void; }
+class OrderService {
+    public function __construct(private OrderRepository $repository) {} // Interface
+}
+class MySqlOrderRepository implements OrderRepository { ... }
+class InMemoryOrderRepository implements OrderRepository { ... } // For tests
+```
+
+---
+
+## Quick Reference
+
+### Code Smell → Principle Violated
+
+| Smell                           | Likely Violation  |
+|---------------------------------|-------------------|
+| Class does too much             | SRP               |
+| Switch on type                  | OCP               |
+| Type checking with `instanceof` | LSP               |
+| Empty method implementations    | ISP               |
+| `new` in business logic         | DIP               |
+| Hard to test                    | DIP               |
+| Changes ripple through codebase | SRP, OCP          |
+
+### Refactoring Patterns
+
+| Problem                   | Pattern                   |
+|---------------------------|---------------------------|
+| Multiple responsibilities | Extract Class             |
+| Switch on type            | Strategy Pattern          |
+| Fat interface             | Interface Segregation     |
+| Concrete dependencies     | Dependency Injection      |
+| Complex conditionals      | Replace with Polymorphism |
+
+## When to Apply
+
+- **Always** for Domain and Application layers
+- **Usually** for Infrastructure (some pragmatism OK)
+- **Judgment** for simple scripts/prototypes
+
+SOLID is a guide, not dogma; the goal is maintainable, testable code.

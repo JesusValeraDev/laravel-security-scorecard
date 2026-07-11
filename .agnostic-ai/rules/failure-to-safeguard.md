@@ -1,0 +1,35 @@
+# Failure → Systemic Safeguard
+
+When a failure is found and fixed — a shipped bug, a regression, a review finding
+that recurs, a loop that stalled or overreached — the fix is not complete until the
+*class* of failure is guarded deterministically. One-off fixes decay; encoded checks
+don't.
+
+## The ladder (prefer the highest rung that fits)
+
+1. **Test** — a failing-first test pinning the exact regression (the default; TDD
+   already requires this for bugs).
+2. **Script** — a deterministic checker an agent or hook can run, when the failure
+   class spans files/layers that a unit test can't see.
+   Existing exemplars: `i18n-parity/check.mjs` (silent locale drift),
+   `rename-sweep/check.sh` (missed rename references).
+3. **Hook** — wire the script into `.claude/settings.json` (PostToolUse) or
+   `.githooks/` when the failure is cheap to check and easy to reintroduce.
+4. **Rule** — a `.agnostic-ai/rules/*.md` entry only for judgment calls that can't
+   be scripted (e.g. `rename-safety.md`). A rule that *could* be a script should
+   become one.
+
+## How to apply
+
+- After any production incident or reverted commit: ask "what check would have made
+  this impossible?" and add it in the same session as the fix.
+- After a loop/agent run wastes turns on the same mistake twice: encode the
+  correction as a script or skill step instead of re-prompting.
+- Prefer exit-code checks over prose instructions — agents verify commands, they
+  skim prose.
+
+## Anti-patterns
+
+- Fixing the instance and moving on ("won't happen again").
+- Writing a rule paragraph when a 20-line script could enforce it.
+- Adding the safeguard "later" — later never has the failure context.

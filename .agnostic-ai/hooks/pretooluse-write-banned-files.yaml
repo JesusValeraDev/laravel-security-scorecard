@@ -1,0 +1,4 @@
+command: 'f=$(printf ''%s'' "$CLAUDE_TOOL_INPUT" | sed -n ''s/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p''); [ -z "$f" ] && exit 0; if echo "$f" | grep -qE ''tests/.*InMemory.*Test\.php$''; then echo "WARNING: BLOCKED - InMemory repositories are test doubles and must NEVER be tested."; exit 2; fi; if echo "$f" | grep -qE ''/app/[A-Z].*/.*\.php$''; then echo "WARNING: BLOCKED - domain PHP must not live in app/ - use modules/ instead."; exit 2; fi'
+event: PreToolUse
+matcher: Write
+name: pretooluse-write-banned-files

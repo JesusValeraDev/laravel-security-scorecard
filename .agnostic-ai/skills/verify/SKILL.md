@@ -1,0 +1,62 @@
+---
+name: verify
+description: Quantitative end-to-end verification gate — run before claiming any change is done or committing to master
+---
+
+# Verify
+
+Deterministic, quantitative checks that decide whether a change is done. Run these
+instead of judging "looks complete" — every gate is pass/fail, no subjective calls.
+A change is **done** only when every applicable gate below is green.
+
+## Gates (in order — stop at first red)
+
+### 1. Static quality
+
+```bash
+make lint     # Pint + PHPStan (level max) + ESLint + tsc
+```
+
+### 2. Test suites
+
+```bash
+make test     # backend (PHPUnit) + frontend (Vitest)
+```
+
+If only one side changed, `make test-be` / `make test-fe` is acceptable for inner
+iterations, but the final verification before commit runs both.
+
+### 3. i18n key parity (when any `resources/frontend/src/lib/i18n/*.ts` changed)
+
+```bash
+node .claude/skills/i18n-parity/check.mjs   # exit 0 required
+```
+
+### 4. No debug leftovers (when PHP/TS changed)
+
+```bash
+rg -n "\bdd\(|\bdump\(|console\.(log|debug)\(" \
+  --type php -g 'resources/frontend/src/**' \
+  -g '!*.test.ts' -g '!*.test.tsx' modules/ app/ resources/frontend/src/ && exit 1 || true
+```
+
+Zero hits required outside test files.
+
+### 5. Rename gate (only for renames)
+
+If the change renames an entity/route/store/table/env var, run the rename sweep in
+gate mode (see the `rename-sweep` skill):
+
+```bash
+.claude/skills/rename-sweep/check.sh gate <old-name>
+```
+
+### 6. Behavior check (nontrivial runtime changes)
+
+Exercise the changed flow end-to-end (API call from the SPA path, or the affected
+`make dev` surface) — not just the tests. Cite what you drove and what you observed.
+
+## Reporting
+
+State results as evidence, not vibes: command run → exit code → relevant output.
+If a gate is red, the change is not done; fix and re-run from gate 1.

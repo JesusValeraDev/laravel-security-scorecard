@@ -1,0 +1,4 @@
+command: 'cmd="$CLAUDE_TOOL_INPUT"; if echo "$cmd" | grep -qiE ''(drop[[:space:]]+database|drop[[:space:]]+table|truncate[[:space:]]+table)''; then echo "WARNING: BLOCKED - destructive database operation detected (DROP/TRUNCATE)."; exit 2; fi; if echo "$cmd" | grep -qE ''rm[[:space:]]+(-[a-z]*f[a-z]*[[:space:]]+)?(/|\./)''; then echo "WARNING: BLOCKED - destructive file deletion detected (rm -rf)."; exit 2; fi; if echo "$cmd" | grep -qE ''git[[:space:]]+push.*--no-verify''; then echo "WARNING: BLOCKED - --no-verify bypasses quality gates. Fix the underlying issue instead."; exit 2; fi'
+event: PreToolUse
+matcher: Bash
+name: pretooluse-bash-safety-guard

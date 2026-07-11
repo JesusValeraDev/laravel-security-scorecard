@@ -1,0 +1,48 @@
+---
+name: debugging-cycle
+description: Diagnoses bugs, regressions, flaky behavior, and failures before fixes are proposed. Use when the user asks to debug, investigate, or find root cause.
+---
+
+Use this skill for requests like `debug flaky auth refresh test`, `investigate invoice sync timeout`, `diagnose build signing failure`, or `find root cause of duplicate webhook handling`.
+
+Inputs: a bug/failure/flaky behavior/regression/diagnostic scope in `$ARGUMENTS`; the Spec Kit bootstrap and workflow commands; relevant code, tests, configs, logs, docs; optional severity/ticket/subsystem/path hints.
+
+Rules:
+- First deliverable is always a repo-local debug artifact, not an immediate fix.
+- Canonical path: `.specify/debug/<case-slug>/debug-report.md`; slug uses `YYYY-MM-DD-short-kebab-summary`, preferring a ticket prefix.
+- The debug report is a pre-spec evidence artifact; it does not replace the canonical `spec.md`.
+- Do not propose or implement fixes until the report has concrete evidence, a best hypothesis, and a recommended follow-up path.
+- For customer-impacting severity, allow reversible containment first (rollback, disable, feature-flag, traffic isolation) and record it explicitly.
+- Ground every factual claim in repo/runtime evidence; label uncertain claims as hypothesis or unknown.
+- If scope crosses 3+ files, 2+ subsystems, or needs end-to-end tracing, run `/workflow.team-run analysis <scope>` before finalizing.
+- This skill runs inside the repo-local workflow; the CLI installs but does not execute it.
+
+Workflow:
+1. Resolve the debug case:
+   - Reuse the current case directory when resuming the same active diagnosis.
+   - Otherwise create `.specify/debug/<case-slug>/`.
+   - Load `debug-report-template.md` before writing or updating `debug-report.md`.
+2. Triage and scoping:
+   - Capture current symptom, impact, severity, suspected surface, and any safe containment step.
+   - Decide whether the case is likely `restore-fix`, `spec-required`, or `investigation-only`; this can stay provisional until more evidence exists.
+3. Investigation:
+   - Reproduce or explicitly document why reproduction is not yet possible.
+   - Read errors fully, compare recent changes, trace data flow, and gather evidence at component boundaries.
+   - When a `codebase-exploration` skill is available, use its Lens tools for rapid context: `read_log_entries` for recent logs, `database_query` for data state, `model_explorer` for relationship tracing, `tinker` for live PHP inspection.
+   - When the surface is broad, run `/workflow.team-run analysis <scope>` and merge that evidence into the report.
+4. Diagnosis synthesis:
+   - Update `debug-report.md` with evidence, current best root-cause hypothesis, known unknowns, and the smallest next validating step.
+   - Set `Resolution class` to one of:
+     - `restore-fix` — a narrow repair that restores already-intended behavior without changing product or interface intent
+     - `spec-required` — the permanent fix changes intended behavior, policy, interface, or another spec-level contract
+     - `investigation-only` — more evidence is needed before either path is safe
+5. Review gate:
+   - Stop and summarize the diagnosis, evidence quality, and resolution class.
+   - End with: `Debug report ready. Reply with "approve debug report" to continue or tell me what to change.`
+6. Post-approval routing:
+   - If the approved resolution class is `restore-fix`, continue as a narrow bugfix implementation in the current repo workflow, keeping the debug report as the source of truth for scope and verification.
+   - If the approved resolution class is `spec-required`, create or update a dedicated Spec Kit feature spec for the permanent change and continue through `spec -> plan -> tasks -> implementation`.
+   - If the approved resolution class is `investigation-only`, continue investigation rather than guessing.
+7. Completion:
+   - Leave the repo with an updated `debug-report.md`.
+   - Summarize the evidence used, the current diagnosis confidence, the chosen resolution class, and the exact next workflow step.

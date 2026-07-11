@@ -1,0 +1,10 @@
+{
+  "hooks": null,
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": true
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash .agnostic-ai/overlays/statusline.sh"
+  }
+}

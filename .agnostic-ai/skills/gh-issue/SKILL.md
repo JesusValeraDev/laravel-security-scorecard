@@ -1,0 +1,101 @@
+---
+name: gh-issue
+description: Fetch a GitHub issue and enter plan mode to implement it
+---
+
+# GitHub Issue Workflow
+
+Fetch a GitHub issue and enter plan mode to implement it.
+
+## Arguments
+- `$ARGUMENTS` - Issue number (e.g., `2` or `#2`)
+
+## Instructions
+
+1. **Parse the issue number** from `$ARGUMENTS` (strip `#`)
+
+2. **Fetch issue details**:
+   ```bash
+   gh issue view <number> --json title,body,labels,assignees,milestone,state
+   ```
+
+3. **Assign yourself if unassigned**:
+   ```bash
+   gh issue edit <number> --add-assignee @me
+   ```
+
+4. **Add appropriate labels** (only if missing):
+   ```bash
+   gh issue edit <number> --add-label "<label>"
+   ```
+   Labels: `bug`, `enhancement`, `documentation`, `help wanted`, `question`.
+
+5. **Move issue to "In Progress"** in GitHub Project (if configured):
+   ```bash
+   # Read project config from .claude/github-project.json (if exists)
+   # Find the issue's item ID in the project
+   ITEM_ID=$(gh project item-list PROJECT_NUMBER --owner OWNER --format json \
+     | jq -r '.items[] | select(.content.number == ISSUE_NUMBER) | .id')
+
+   # Move to "In Progress" status
+   gh project item-edit \
+     --id "$ITEM_ID" \
+     --project-id "PROJECT_ID" \
+     --field-id "STATUS_FIELD_ID" \
+     --single-select-option-id "IN_PROGRESS_OPTION_ID"
+   ```
+   Requires `project` scope (`gh auth refresh -s project`).
+
+6. **Analyze the issue**: requirements from title/body, labels, referenced issues/PRs.
+
+7. **Enter Plan Mode**: explore affected areas, identify files to change, consider hexagonal/DDD architecture, plan the TDD approach.
+
+8. **Create implementation plan**: summary, files to create/modify, test strategy (unit/integration/feature), step-by-step order.
+
+9. **After plan approval**, implement TDD: failing test first, minimum code to pass, refactor green; run `composer test`.
+
+10. **Verify tests pass**:
+    ```bash
+    ./vendor/bin/phpunit --coverage-text
+    ```
+
+11. **Wait for explicit commit instruction** before committing. Never auto-commit.
+
+12. **Move issue to "In Review"** in GitHub Project (if configured): same pattern as step 5 with the "In Review" status option.
+
+## Example Usage
+
+```
+/gh-issue 2
+/gh-issue #15
+```
+
+## Output Format
+
+After fetching, present the issue like this:
+
+```
+## Issue #<number>: <title>
+
+**Labels:** <labels>
+**State:** <state>
+
+### Description
+<body content>
+
+### Implementation Plan
+1. ...
+2. ...
+```
+
+## Checklist
+- [ ] Issue fetched and understood
+- [ ] Self-assigned if unassigned
+- [ ] Appropriate labels added
+- [ ] Issue moved to "In Progress" in GitHub Project (if configured)
+- [ ] Codebase explored for context
+- [ ] Plan created and approved
+- [ ] Tests written first (TDD)
+- [ ] Implementation complete
+- [ ] `composer test` passes
+- [ ] Issue moved to "In Review" in GitHub Project (if configured)

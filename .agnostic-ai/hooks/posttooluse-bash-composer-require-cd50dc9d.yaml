@@ -1,0 +1,4 @@
+command: 'echo ''Remember to run: composer audit'''
+event: PostToolUse
+matcher: Bash(composer require*)
+name: posttooluse-bash-composer-require-cd50dc9d

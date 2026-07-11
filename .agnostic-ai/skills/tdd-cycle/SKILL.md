@@ -1,0 +1,78 @@
+---
+name: tdd-cycle
+description: Guide the red-green-refactor workflow for test-driven development
+---
+
+# TDD Cycle Guide
+
+Guide the red-green-refactor workflow for test-driven development.
+
+## Arguments
+- `$ARGUMENTS` - Optional: specific test file or class to work on
+
+## The TDD Cycle
+
+### 1. RED - Write a Failing Test
+
+Before any production code: identify the behavior, write the smallest test for it, run it, verify it fails for the expected reason.
+
+```bash
+./vendor/bin/phpunit --filter <TestName>
+```
+
+- Good fail reasons: class/method does not exist, assertion mismatch.
+- Bad fail reasons: syntax error, wrong setup, unrelated exception.
+
+### 2. GREEN - Make It Pass
+
+Write the **minimum code** to pass: don't over-engineer, hardcoding is OK initially, no features beyond the test. Run and verify it passes.
+
+```bash
+./vendor/bin/phpunit --filter <TestName>
+```
+
+### 3. REFACTOR - Improve the Code
+
+With tests as a safety net: remove duplication, improve naming, extract methods/classes. Re-run tests after each change.
+
+```bash
+./vendor/bin/phpunit
+```
+
+Rules: no new functionality, tests stay green, small incremental changes.
+
+## Test Types by Layer
+
+| Layer              | Location                           | Base Class         | Purpose                        |
+|--------------------|------------------------------------|--------------------|--------------------------------|
+| Unit (Domain)      | `tests/Unit/<Module>/Domain/`      | `PHPUnit\TestCase` | Entities, VOs, domain services |
+| Unit (Application) | `tests/Unit/<Module>/Application/` | `PHPUnit\TestCase` | Handlers with mocked repos     |
+| Integration        | `tests/Integration/<Module>/`      | `Tests\TestCase`   | Repository implementations     |
+| Feature            | `tests/Feature/<Module>/`          | `Tests\TestCase`   | HTTP request/response          |
+
+> See `tdd-workflow` skill for complete test templates.
+
+## TDD Best Practices
+
+- **Test naming**: `test_throws_exception_when_email_is_invalid()`
+- **AAA pattern**: Arrange → Act → Assert
+- **One concept per test**: Focus on single behavior
+- **Mock at boundaries**: Mock interfaces, not concrete classes
+
+## Running Tests
+
+```bash
+./vendor/bin/phpunit                                # All
+./vendor/bin/phpunit tests/Unit/User                # By module (also tests/Integration|Feature/User)
+./vendor/bin/phpunit --filter UserTest              # By class
+./vendor/bin/phpunit --filter test_can_create_user  # By method
+./vendor/bin/phpunit --coverage-text                # With coverage
+```
+
+## Checklist
+- [ ] Test written before implementation
+- [ ] Test fails for the right reason
+- [ ] Minimum code written to pass
+- [ ] Test passes
+- [ ] Code refactored
+- [ ] All tests still pass

@@ -1,0 +1,98 @@
+# Security Reviewer Agent
+
+Identifies and fixes security vulnerabilities in this Laravel/PHP hexagonal+DDD app: OWASP Top 10, hardcoded secrets, input sanitization, authn/authz, dependency vulnerabilities.
+
+## Security Review Workflow
+
+### Phase 1: Automated Scan
+```bash
+# Check for known vulnerabilities
+composer audit
+
+# Static analysis for security issues
+./vendor/bin/phpstan analyse --level=max
+```
+
+### Phase 2: OWASP Top 10 Analysis
+
+| Category                      | What to Check                          |
+|-------------------------------|----------------------------------------|
+| A01 Broken Access Control     | Middleware, policies, route protection |
+| A02 Cryptographic Failures    | Password hashing, encryption at rest   |
+| A03 Injection                 | SQL, command, LDAP injection           |
+| A04 Insecure Design           | Business logic flaws                   |
+| A05 Security Misconfiguration | Debug mode, default credentials        |
+| A06 Vulnerable Components     | Outdated dependencies                  |
+| A07 Auth Failures             | Session management, password policies  |
+| A08 Data Integrity Failures   | Deserialization, unsigned updates      |
+| A09 Logging Failures          | Missing audit trails                   |
+| A10 SSRF                      | Unvalidated URL fetching               |
+
+### Phase 3: SPA/API-Specific Checks
+
+This is an API-only backend with a React SPA. There are no Blade forms or `@csrf` directives.
+
+| Concern             | Verification                                                                       |
+|---------------------|------------------------------------------------------------------------------------|
+| Mass Assignment     | `$fillable`/`$guarded` defined on all Eloquent models                              |
+| CSRF Protection     | Sanctum SPA: `XSRF-TOKEN` cookie read by frontend, sent as `X-XSRF-TOKEN` header  |
+| SQL Injection       | No raw queries with user input; use Eloquent or parameterized queries              |
+| XSS via TipTap HTML | Chapter content is stored as HTML from TipTap editor — sanitize before storage    |
+| File Uploads        | Validate type/size, use Laravel Storage facade (not direct filesystem paths)       |
+| Auth middleware     | All API routes behind `auth:sanctum` except explicitly public endpoints            |
+| Rate limiting       | Public endpoints (magic link, OAuth) have `throttle:` middleware                  |
+
+## Critical Vulnerability Patterns
+
+```php
+// BAD: SQL Injection
+DB::select("SELECT * FROM users WHERE id = $id");
+
+// GOOD: Parameterized
+DB::select("SELECT * FROM users WHERE id = ?", [$id]);
+
+// BAD: Command Injection
+exec("convert " . $userInput . " output.jpg");
+
+// GOOD: Escaped/Validated
+exec("convert " . escapeshellarg($validatedPath) . " output.jpg");
+
+// BAD: Mass Assignment
+User::create($request->all());
+
+// GOOD: Explicit fields
+User::create($request->only(['name', 'email']));
+
+// BAD: Hardcoded secret
+$apiKey = "sk-xxxxx";
+
+// GOOD: Environment variable
+$apiKey = config('services.api.key');
+```
+
+## Report Format
+
+```markdown
+## Security Review: [Component Name]
+
+### Critical Issues
+- [Issue description with file:line reference]
+- Remediation: [How to fix]
+
+### High Priority
+...
+
+### Medium Priority
+...
+
+### Recommendations
+...
+```
+
+## When to Trigger Review
+
+- New API endpoints created
+- Authentication code changes
+- User input handling modified
+- Dependencies updated
+- After security incidents
