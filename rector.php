@@ -13,7 +13,7 @@ return RectorConfig::configure()
     ])
     ->withPhpVersion(PhpVersion::PHP_85)
     ->withPhpSets(php85: true)
-    ->withImportNames(importShortClasses: false)
+    ->withImportNames(importShortClasses: false, removeUnusedImports: true)
     ->withSets([
         SetList::CODE_QUALITY,
         SetList::DEAD_CODE,

@@ -5,7 +5,7 @@ shareable report card that flags common misconfigurations — exposed `.env`/`.g
 unauthenticated Telescope/Horizon/Pulse, the Ignition RCE endpoint, missing security
 headers, and more — each with a plain-English explanation and the exact fix.
 
-[![PHP 8.4](https://img.shields.io/badge/PHP-8.4+-777BB4?logo=php&logoColor=white)](https://php.net)
+[![PHP 8.5](https://img.shields.io/badge/PHP-8.5+-777BB4?logo=php&logoColor=white)](https://php.net)
 [![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
