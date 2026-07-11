@@ -1,5 +1,5 @@
 {{-- $checks is generated from the registered checks (ScanForm::checkCards), never hand-listed. --}}
-<div class="pt-20 sm:pt-28">
+<div class="sm:pt-24">
     <section class="mx-auto max-w-3xl text-center">
         <h1 class="rise text-balance text-4xl font-medium leading-[1.1] tracking-[-0.03em] sm:text-[3.25rem]">
             See what your app hands to strangers.
