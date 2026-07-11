@@ -104,9 +104,13 @@ Redis, no mail provider:
 
 1. Point Laravel Cloud at the repo — it auto-detects Laravel.
 2. Set `APP_KEY` and (recommended) a managed **PostgreSQL** database via the dashboard;
-   the app reads `DB_*` from the environment.
-3. Keep `QUEUE_CONNECTION=sync` to avoid running a worker.
-4. Health checks are served at `/up`.
+   the app reads `DB_*` from the environment. This persists scan reports across deploys.
+3. Keep `QUEUE_CONNECTION=sync` — scans run in-request, so **no queue worker** is needed.
+4. **No scheduler** is required — the app runs no scheduled commands.
+5. Health checks are served at `/up`.
+
+The result is a single web service plus a database — no background worker, no
+scheduled-task process.
 
 ---
 
