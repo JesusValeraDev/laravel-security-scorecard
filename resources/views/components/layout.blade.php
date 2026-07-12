@@ -2,7 +2,7 @@
 <html lang="en" class="antialiased">
 @php
     $pageTitle = $title ?? 'Security Scorecard · passive security check for Laravel apps';
-    $pageDescription = $description ?? 'Enter a domain to get a graded report of what your Laravel app is exposing — leaked files, open dashboards, missing headers — and the exact fix for each.';
+    $pageDescription = $description ?? 'Enter a domain to get a graded security report for your Laravel app, including leaked files, exposed dashboards, missing security headers, and step-by-step fixes.';
     // Scan reports are per-scan and may name someone's exposed findings: never index them.
     $noindex = $noindex ?? false;
 @endphp
@@ -57,7 +57,7 @@
     @livewireStyles
 </head>
 <body class="min-h-screen bg-ground font-sans text-ink">
-    <div class="mx-auto flex min-h-screen w-full max-w-[980px] flex-col px-6">
+    <div class="mx-auto flex min-h-screen w-full max-w-245 flex-col px-6">
         <header class="flex items-center justify-between py-7">
             {{-- Brand lockup: shield + check + score bars. The only brand colour on the page.
                  It also doubles as the way home, so no separate nav link is needed. --}}
@@ -113,24 +113,19 @@
             {{ $slot }}
         </main>
 
-        {{-- One baseline, mirroring the header: the sentence that must hold everywhere on the
-             left, the colophon on the right. --}}
         <footer class="mt-24 flex flex-col gap-3 border-t border-rule py-7 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
             <p class="text-[13px] leading-relaxed text-muted">
                 Scan applications you own or are authorized to test.
             </p>
 
             <div class="flex shrink-0 items-center gap-4 font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
-                {{-- Source: external, opens in a new tab. --}}
                 <a href="https://github.com/JesusValeraDev/laravel-security-scorecard"
                    target="_blank" rel="noopener noreferrer" class="transition hover:text-ink" aria-label="Source on GitHub">
                     <svg viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4" aria-hidden="true">
                         <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.04-.02-2.05-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.22.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5Z"/>
                     </svg>
                 </a>
-
-                {{-- Author's site: stays in the same tab (no target blank). --}}
-                <a href="https://jesusvalera.dev/" rel="me" class="transition hover:text-ink" aria-label="jesusvalera.dev">
+                <a href="https://jesusvalera.dev/" target="_blank" rel="me" class="transition hover:text-ink" aria-label="jesusvalera.dev">
                     <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4" stroke="currentColor"
                          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <circle cx="12" cy="12" r="9"/>

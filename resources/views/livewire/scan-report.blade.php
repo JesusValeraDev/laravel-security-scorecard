@@ -78,7 +78,7 @@
             <h1 class="mt-5 break-all text-4xl font-medium tracking-[-0.03em] sm:text-5xl">{{ $scan->host }}</h1>
 
             <div class="mt-10 flex flex-col gap-8 sm:flex-row sm:items-end sm:gap-12">
-                <p class="text-[7rem] font-medium leading-[0.8] tracking-[-0.05em] {{ $gradeTone }}">
+                <p class="text-[7rem] font-medium leading-[0.8] tracking-tighter {{ $gradeTone }}">
                     {{ $grade }}
                 </p>
 

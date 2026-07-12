@@ -5,11 +5,9 @@
             See what your app hands to strangers.
         </h1>
 
-        {{-- Says what you get. The safety promise is not repeated here — it closes the page, once,
-             after the request lists have already proved it. --}}
         <p class="rise mx-auto mt-6 max-w-lg text-pretty leading-relaxed text-muted" style="animation-delay: 60ms">
-            Enter a domain to get a graded report of what your Laravel app is exposing — leaked files,
-            open dashboards, missing headers — and the exact fix for each.
+            Enter a domain to get a graded security report for your Laravel app, including leaked files,
+            exposed dashboards, missing security headers, and step-by-step fixes.
         </p>
 
         {{-- The page has one job, so it gets one control. Its shape sets the shape of everything below. --}}
@@ -111,7 +109,7 @@
 
         <p class="mt-5 max-w-2xl text-[17px] leading-relaxed text-ink">
             Security Scorecard only requests pages your server
-            <span class="font-medium">already serves to the public</span>.
+            <span class="font-medium">already serves to the public</span>.<br>
             It sends no payloads, submits no forms, exploits nothing, and reports a problem only
             when the response body proves it.
         </p>
