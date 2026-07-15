@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="en" class="antialiased">
+{{-- Server-render the last resolved theme from a cookie so a wire:navigate morph keeps
+     data-theme (no flash of light before JS re-applies). --}}
+<html lang="en" class="antialiased" data-theme="{{ request()->cookie('theme_resolved', 'light') }}" style="color-scheme: {{ request()->cookie('theme_resolved', 'light') }}">
 @php
     $pageTitle = $title ?? 'Security Scorecard · passive security check for Laravel apps';
     $pageDescription = $description ?? 'Enter a domain to get a graded security report for your Laravel app, including leaked files, exposed dashboards, missing security headers, and step-by-step fixes.';
@@ -18,13 +20,20 @@
             const get = () => localStorage.getItem('theme') || 'system';
             const apply = (mode) => {
                 const dark = mode === 'dark' || (mode !== 'light' && mq.matches);
+                const resolved = dark ? 'dark' : 'light';
                 const root = document.documentElement;
-                root.dataset.theme = dark ? 'dark' : 'light';
-                root.style.colorScheme = dark ? 'dark' : 'light';
+                root.dataset.theme = resolved;
+                root.style.colorScheme = resolved;
+                // Persist the resolved value so the server can render data-theme on the next
+                // navigation and the morph does not flash light before JS runs.
+                document.cookie = 'theme_resolved=' + resolved + ';path=/;max-age=31536000;samesite=lax';
             };
             window.__theme = { get, apply, set: (m) => { localStorage.setItem('theme', m); apply(m); } };
             apply(get());
             mq.addEventListener('change', () => { if (get() === 'system') apply('system'); });
+            // wire:navigate morphs a fresh server DOM that has no data-theme, so re-apply
+            // the stored choice after each SPA navigation to avoid reverting to light.
+            document.addEventListener('livewire:navigated', () => apply(get()));
         })();
     </script>
 

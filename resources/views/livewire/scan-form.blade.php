@@ -184,7 +184,7 @@
 
             <ul class="mt-5 grid gap-3 md:grid-cols-3" role="list">
                 @foreach ($ownRequest as $check)
-                    <li class="panel flex flex-col gap-2 p-5">
+                    <li class="panel flex flex-col gap-2 p-5 transition-shadow hover:shadow-[0_1px_2px_rgb(15_20_23/0.05),0_8px_20px_-12px_rgb(15_20_23/0.35)]">
                         <p class="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[13px] leading-relaxed text-ink">
                             @foreach ($check->requests as $request)
                                 <span>{{ $request }}</span>
@@ -205,7 +205,7 @@
 
                 <ul class="mt-5 grid gap-3 sm:grid-cols-2" role="list">
                     @foreach ($check->reveals as $reveals)
-                        <li class="panel p-5 text-[13px] leading-relaxed text-muted">{{ $reveals }}</li>
+                        <li class="panel p-5 text-[13px] leading-relaxed text-muted transition-shadow hover:shadow-[0_1px_2px_rgb(15_20_23/0.05),0_8px_20px_-12px_rgb(15_20_23/0.35)]">{{ $reveals }}</li>
                     @endforeach
                 </ul>
             </section>
