@@ -96,12 +96,17 @@ The defaults are chosen so the app **costs nothing to run** — no database, no 
 ### Deploying to Laravel Cloud
 
 1. Point Laravel Cloud at the repo — it auto-detects Laravel.
-2. Set `APP_KEY`. **No database** is needed — the app persists nothing.
+2. Set `APP_KEY`. **No database** is needed — the app persists nothing, so skip provisioning one and run no migrations.
 3. Keep `QUEUE_CONNECTION=sync` — scans run in-request, so **no queue worker** is needed.
-4. **No scheduler** is required — the app runs no scheduled commands.
-5. Health checks are served at `/up`.
+4. Keep `CACHE_STORE=file` and `SESSION_DRIVER=file` — **no Redis** or other store is needed.
+5. **No scheduler** is required — the app runs no scheduled commands.
+6. Health checks are served at `/up`.
 
-The result is a single stateless web service — no database, no background worker, no scheduled-task process.
+The result is a single stateless web service — no database, no queue worker, no Redis, no scheduled-task process.
+
+> **Scaling note:** `file` cache/session write to the instance's local disk, which is fine for a single
+> web service. If you scale to multiple instances behind a load balancer, enable sticky sessions or switch
+> `CACHE_STORE`/`SESSION_DRIVER` to a shared store (e.g. Redis) — the only reason you'd add one.
 
 ---
 
