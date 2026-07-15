@@ -18,7 +18,9 @@ use Throwable;
  */
 final readonly class CookieSecurityCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     public function id(): string
     {
@@ -39,7 +41,7 @@ final readonly class CookieSecurityCheck implements Check
     public function run(Target $target): ?Finding
     {
         try {
-            $response = $this->client->get($target->url('/'));
+            $response = $this->client->get($target->url());
         } catch (Throwable) {
             return null;
         }
@@ -86,16 +88,17 @@ final readonly class CookieSecurityCheck implements Check
                 ? Severity::Medium
                 : Severity::Low;
 
+            $isPlural = (count($missing) === 1 ? '' : 's');
+
             return new Finding(
                 checkId: $this->id(),
                 severity: $severity,
-                title: 'Session cookie is missing '.implode(' and ', $missing).' flag'.(count($missing) === 1 ? '' : 's'),
-                explanation: 'Your session cookie is set without the '.implode(', ', $missing)
-                    .' attribute'.(count($missing) === 1 ? '' : 's').'. Without Secure it can '
-                    .'leak over plain HTTP; without HttpOnly a cross-site scripting bug can '
-                    .'read it and hijack the session.',
-                fix: 'In config/session.php set "secure" => true, "http_only" => true, and a '
-                    .'"same_site" of "lax" or "strict" (SESSION_SECURE_COOKIE=true in .env).',
+                title: 'Session cookie is missing '.implode(' and ', $missing).' flag'.$isPlural,
+                explanation: 'Your session cookie is set without the '.implode(', ', $missing).' attribute'
+                .$isPlural.'. Without Secure it can leak over plain HTTP; without HttpOnly a'.
+                ' cross-site scripting bug can read it and hijack the session.',
+                fix: 'In config/session.php set "secure" => true, "http_only" => true, and a "same_site" of "lax" or'.
+                ' "strict" (SESSION_SECURE_COOKIE=true in .env).',
                 evidence: 'Session cookie missing: '.implode(', ', $missing),
             );
         }

@@ -12,7 +12,8 @@ Laravel implementations of domain interfaces.
 - Use Form Requests for validation
 - Use API Resources for response transformation
 - Register interface bindings in module service providers
-- Controllers should never use Eloquent models to talk to DB directly; use application services with the repository pattern
+- Controllers should never use Eloquent models to talk to DB directly; use application services with the repository
+  pattern
 
 ## Eloquent Repository Pattern
 

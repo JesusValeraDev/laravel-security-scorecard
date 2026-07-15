@@ -17,7 +17,9 @@ use Throwable;
  */
 final readonly class DirectoryListingCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     private const array PROBE_PATHS = ['storage', 'vendor', 'assets', 'uploads'];
 
@@ -61,11 +63,10 @@ final readonly class DirectoryListingCheck implements Check
                 checkId: $this->id(),
                 severity: Severity::Low,
                 title: 'Directory listing is enabled',
-                explanation: 'The web server returns a browsable file listing at '
-                    .$target->url($path.'/').'. This exposes your directory structure and '
-                    .'can reveal files that were never meant to be linked publicly.',
-                fix: 'Disable autoindex on the web server (Options -Indexes in Apache, or '
-                    .'remove autoindex on in nginx), and serve only the public/ directory.',
+                explanation: 'The web server returns a browsable file listing at '.$target->url($path.'/')
+                .'. This exposes your directory structure and can reveal files that were never meant to be linked publicly.',
+                fix: 'Disable autoindex on the web server (Options -Indexes in Apache, or remove autoindex on in nginx),'.
+                ' and serve only the public/ directory.',
                 evidence: 'Autoindex page found at /'.$path.'/.',
             );
         }

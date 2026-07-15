@@ -17,7 +17,9 @@ use Throwable;
  */
 final readonly class GitDirectoryExposedCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     public function id(): string
     {
@@ -56,11 +58,9 @@ final readonly class GitDirectoryExposedCheck implements Check
             checkId: $this->id(),
             severity: Severity::Critical,
             title: 'Your .git directory is publicly accessible',
-            explanation: 'Your version control metadata is reachable at '
-                .$target->url('.git/').'. Tools can clone your full source code and history '
-                .'from it — including any secrets ever committed.',
-            fix: 'Block access to dotfiles at the web server, and make sure the web root is '
-                .'the public/ directory. Never deploy the .git folder to production.',
+            explanation: 'Your version control metadata is reachable at '.$target->url('.git/').'. Tools can clone'
+            .' your full source code and history from it — including any secrets ever committed.',
+            fix: 'Block access to dotfiles at the web server, and make sure the web root is the public/ directory. Never deploy the .git folder to production.',
             evidence: 'Valid .git/HEAD found.',
         );
     }

@@ -15,9 +15,4 @@ final readonly class ScanResult
         public array $findings,
         public array $passed,
     ) {}
-
-    public function checksRun(): int
-    {
-        return count($this->findings) + count($this->passed);
-    }
 }

@@ -17,7 +17,9 @@ use Throwable;
  */
 final readonly class LogFileExposedCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     public function id(): string
     {
@@ -50,7 +52,10 @@ final readonly class LogFileExposedCheck implements Check
         $body = $response->body();
 
         // Laravel log lines look like: [2024-01-01 12:00:00] production.ERROR: ...
-        if (! preg_match('/\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]\s+\w+\.(ERROR|INFO|WARNING|DEBUG|CRITICAL)/', $body)) {
+        if (! preg_match(
+            '/\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}]\s+\w+\.(ERROR|INFO|WARNING|DEBUG|CRITICAL)/',
+            $body
+        )) {
             return null;
         }
 
@@ -58,12 +63,10 @@ final readonly class LogFileExposedCheck implements Check
             checkId: $this->id(),
             severity: Severity::Critical,
             title: 'Your Laravel log file is publicly readable',
-            explanation: 'The log at '.$target->url('storage/logs/laravel.log').' is served to '
-                .'anyone. Laravel logs commonly contain stack traces, SQL queries, request '
-                .'payloads, tokens, and personal data — a direct information leak.',
-            fix: 'Make sure the web root is the public/ directory so storage/ is never served, '
-                .'and block access to it at the web server. Rotate any secrets that may have '
-                .'appeared in the logs.',
+            explanation: 'The log at '.$target->url('storage/logs/laravel.log').' is served to anyone. Laravel'
+            .' logs commonly contain stack traces, SQL queries, request payloads, tokens, and personal data — a direct information leak.',
+            fix: 'Make sure the web root is the public/ directory so storage/ is never served, and block access to it at'
+            .' the web server. Rotate any secrets that may have appeared in the logs.',
             evidence: 'Response matched Laravel log line format.',
         );
     }

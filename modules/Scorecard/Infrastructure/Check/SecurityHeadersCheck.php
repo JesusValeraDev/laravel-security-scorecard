@@ -18,7 +18,9 @@ use Throwable;
  */
 final readonly class SecurityHeadersCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     /**
      * Header name (lowercase) => [display label, weight]. Higher weight = bigger risk.
@@ -53,7 +55,7 @@ final readonly class SecurityHeadersCheck implements Check
     public function run(Target $target): ?Finding
     {
         try {
-            $response = $this->client->get($target->url('/'));
+            $response = $this->client->get($target->url());
         } catch (Throwable) {
             return null;
         }
@@ -87,14 +89,12 @@ final readonly class SecurityHeadersCheck implements Check
             checkId: $this->id(),
             severity: $severity,
             title: count($missing).' recommended security header'.(count($missing) === 1 ? '' : 's').' missing',
-            explanation: 'Your homepage is missing: '.implode(', ', $missing).'. These headers '
-                .'defend against protocol downgrade (HSTS), cross-site scripting (CSP), '
-                .'clickjacking (X-Frame-Options), and MIME sniffing. Their absence is how '
-                .'header graders like securityheaders.com dock points.',
-            fix: 'Add the missing headers via middleware (or your web server config). A '
-                .'sensible baseline: HSTS with a long max-age, a Content-Security-Policy, '
-                .'X-Frame-Options: DENY, X-Content-Type-Options: nosniff, a Referrer-Policy, '
-                .'and a Permissions-Policy.',
+            explanation: 'Your homepage is missing: '.implode(', ', $missing).'. These headers defend against'.
+            ' protocol downgrade (HSTS), cross-site scripting (CSP), clickjacking (X-Frame-Options), and MIME sniffing. '
+            .'Their absence is how header graders like securityheaders.com dock points.',
+            fix: 'Add the missing headers via middleware (or your web server config). A sensible baseline: HSTS with a'
+            .' long max-age, a Content-Security-Policy, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, a'
+            .' Referrer-Policy, and a Permissions-Policy.',
             evidence: 'Missing: '.implode(', ', $missing),
         );
     }

@@ -17,7 +17,9 @@ use Throwable;
  */
 final readonly class EnvFileExposedCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     public function id(): string
     {
@@ -51,7 +53,7 @@ final readonly class EnvFileExposedCheck implements Check
 
         // Require concrete evidence: env-style keys that a real .env would contain.
         $markers = ['APP_KEY=', 'APP_ENV=', 'DB_PASSWORD=', 'DB_CONNECTION='];
-        $hits = array_filter($markers, fn (string $m): bool => str_contains($body, $m));
+        $hits = array_filter($markers, static fn (string $m): bool => str_contains($body, $m));
 
         if (count($hits) < 2) {
             return null;
@@ -61,12 +63,10 @@ final readonly class EnvFileExposedCheck implements Check
             checkId: $this->id(),
             severity: Severity::Critical,
             title: 'Your .env file is publicly downloadable',
-            explanation: 'Anyone can read '.$target->url('.env').', which exposes your '
-                .'app key, database credentials, and third-party API secrets. This is a '
-                .'full compromise of your application.',
-            fix: 'Ensure your web root points at the public/ directory, never the project '
-                .'root. Rotate APP_KEY and every credential in the file immediately — assume '
-                .'they are already leaked.',
+            explanation: 'Anyone can read '.$target->url('.env').', which exposes your app key, database'
+            .' credentials, and third-party API secrets. This is afull compromise of your application.',
+            fix: 'Ensure your web root points at the public/ directory, never the project root. Rotate APP_KEY and'.
+            ' every credential in the file immediately — assume they are already leaked.',
             evidence: 'Response contained: '.implode(', ', $hits),
         );
     }

@@ -7,14 +7,16 @@ namespace Modules\Scorecard\Infrastructure\Http\Livewire;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\RateLimiter;
+use InvalidArgumentException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Modules\Scorecard\Application\ScanRunner;
+use Modules\Scorecard\Domain\ValueObject\Finding;
 use Modules\Scorecard\Domain\ValueObject\Target;
+use Modules\Scorecard\Infrastructure\Http\Client\ProbeClient;
 use Modules\Scorecard\Infrastructure\Http\Client\PublicHostGuard;
-use Modules\Scorecard\Infrastructure\Persistence\Eloquent\Model\ScanModel;
-use Modules\Scorecard\Infrastructure\Queue\RunScan;
+use Throwable;
 
 #[Layout('components.layout')]
 class ScanForm extends Component
@@ -22,13 +24,34 @@ class ScanForm extends Component
     #[Validate('required|string|max:255')]
     public string $url = '';
 
-    public function scan()
+    /**
+     * The scan runs inline (sync queue) and its result lives only on the component, so a
+     * page refresh clears it. Nothing is persisted — there is no database.
+     */
+    public bool $scanned = false;
+
+    public ?string $failure = null;
+
+    public ?string $host = null;
+
+    public ?string $gradeLetter = null;
+
+    public ?int $gradeScore = null;
+
+    /** @var list<array{severity: string, title: string, explanation: string, fix: string, evidence: ?string}> */
+    public array $findings = [];
+
+    /** @var list<string> */
+    public array $passed = [];
+
+    public function scan(): void
     {
         $this->validate();
+        $this->reset('scanned', 'failure', 'host', 'gradeLetter', 'gradeScore', 'findings', 'passed');
 
         try {
             $target = Target::fromUrl($this->url);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             $this->addError('url', $e->getMessage());
 
             return;
@@ -49,20 +72,52 @@ class ScanForm extends Component
             return;
         }
 
-        RateLimiter::hit($key, decaySeconds: 60);
+        RateLimiter::hit($key);
 
-        $scan = ScanModel::create([
-            'url' => $target->origin(),
-            'host' => $target->host,
-            'status' => 'pending',
-            // Seed the total so the progress bar has a denominator before the job starts.
-            'checks_total' => app(ScanRunner::class)->checkCount(),
-        ]);
+        // A grade is a claim about a server's responses, so we must have some. Without this,
+        // an unreachable site fails every check silently and walks away with an A.
+        if (! $this->responds($target)) {
+            $this->failure = 'We got no response from '.$target->host.'. Check the URL and try again.';
 
-        // Queue the scan; the report page streams live progress until it completes.
-        RunScan::dispatch($scan->id);
+            return;
+        }
 
-        return $this->redirect(route('report', $scan), navigate: true);
+        try {
+            $result = app(ScanRunner::class)->run($target);
+        } catch (Throwable $e) {
+            report($e);
+            $this->failure = 'The scan could not be completed. The site may be unreachable.';
+
+            return;
+        }
+
+        $this->host = $target->host;
+        $this->gradeLetter = $result->grade->letter;
+        $this->gradeScore = $result->grade->score;
+        $this->findings = array_map(static fn (Finding $f): array => [
+            'severity' => $f->severity->value,
+            'title' => $f->title,
+            'explanation' => $f->explanation,
+            'fix' => $f->fix,
+            'evidence' => $f->evidence,
+        ], $result->findings);
+        $this->passed = $result->passed;
+        $this->scanned = true;
+    }
+
+    /**
+     * Any answer counts — a 404 or a 500 is still a server we can grade. Only a connection
+     * failure (no DNS, no route, no TLS, timeout) means there is nothing there to scan.
+     */
+    private function responds(Target $target): bool
+    {
+        try {
+            app(ProbeClient::class)->get($target->origin());
+
+            return true;
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     /**
@@ -105,10 +160,12 @@ class ScanForm extends Component
             $grouped[$key]['reveals'][] = self::REVEALS[$entry->id] ?? $entry->title;
         }
 
-        return array_values(array_map(
-            static fn (array $group): CheckCard => new CheckCard($group['requests'], $group['reveals']),
-            $grouped,
-        ));
+        return array_values(
+            array_map(
+                static fn (array $group): CheckCard => new CheckCard($group['requests'], $group['reveals']),
+                $grouped,
+            )
+        );
     }
 
     public function render(): Factory|View

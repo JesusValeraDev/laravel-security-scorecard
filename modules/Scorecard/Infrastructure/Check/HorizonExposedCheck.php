@@ -17,7 +17,9 @@ use Throwable;
  */
 final readonly class HorizonExposedCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     public function id(): string
     {
@@ -55,7 +57,7 @@ final readonly class HorizonExposedCheck implements Check
         }
 
         $expected = ['jobsPerMinute', 'processes', 'queueWithMaxRuntime', 'periods'];
-        $present = array_filter($expected, fn (string $k): bool => array_key_exists($k, $json));
+        $present = array_filter($expected, static fn (string $k): bool => array_key_exists($k, $json));
 
         if (count($present) < 2) {
             return null;
@@ -66,10 +68,8 @@ final readonly class HorizonExposedCheck implements Check
             severity: Severity::High,
             title: 'Horizon is reachable without authentication',
             explanation: 'The Horizon dashboard is open at '.$target->url('horizon')
-                .'. It exposes your queue workload and lets anyone pause workers or retry '
-                .'and delete jobs.',
-            fix: 'Lock Horizon down with the HorizonServiceProvider gate (the "viewHorizon" '
-                .'gate), so only authorized users can reach /horizon.',
+            .'. It exposes your queue workload and lets anyone pause workers or retry and delete jobs.',
+            fix: 'Lock Horizon down with the HorizonServiceProvider gate (the "viewHorizon" gate), so only authorized users can reach /horizon.',
             evidence: 'Horizon stats API responded with live queue metrics.',
         );
     }

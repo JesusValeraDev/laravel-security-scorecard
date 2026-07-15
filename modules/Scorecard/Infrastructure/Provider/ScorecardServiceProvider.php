@@ -24,7 +24,6 @@ use Modules\Scorecard\Infrastructure\Check\TelescopeExposedCheck;
 use Modules\Scorecard\Infrastructure\Http\Client\ProbeClient;
 use Modules\Scorecard\Infrastructure\Http\Client\PublicHostGuard;
 use Modules\Scorecard\Infrastructure\Http\Livewire\ScanForm;
-use Modules\Scorecard\Infrastructure\Http\Livewire\ScanReport;
 
 final class ScorecardServiceProvider extends ServiceProvider
 {
@@ -61,6 +60,5 @@ final class ScorecardServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Livewire::component('scan-form', ScanForm::class);
-        Livewire::component('scan-report', ScanReport::class);
     }
 }

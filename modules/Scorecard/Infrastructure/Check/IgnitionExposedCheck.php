@@ -18,7 +18,9 @@ use Throwable;
  */
 final readonly class IgnitionExposedCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     public function id(): string
     {
@@ -54,12 +56,9 @@ final readonly class IgnitionExposedCheck implements Check
             checkId: $this->id(),
             severity: Severity::Critical,
             title: 'The Ignition execute-solution endpoint is exposed',
-            explanation: 'The endpoint behind CVE-2021-3129 is reachable at '
-                .$target->url('_ignition/execute-solution').'. On vulnerable versions this '
-                .'allows unauthenticated remote code execution. Its presence means debug '
-                .'mode is on in production.',
-            fix: 'Set APP_DEBUG=false in production, and update facade/ignition to a patched '
-                .'release. Ignition should never be reachable on a live site.',
+            explanation: 'The endpoint behind CVE-2021-3129 is reachable at '.$target->url('_ignition/execute-solution')
+            .'. On vulnerable versions this allows unauthenticated remote code execution. Its presence means debug mode is on in production.',
+            fix: 'Set APP_DEBUG=false in production, and update facade/ignition to a patched release. Ignition should never be reachable on a live site.',
             evidence: 'Endpoint responded 405 to GET (route present, POST-only).',
         );
     }

@@ -84,7 +84,7 @@ final readonly class ScanRunner
         }
 
         // Worst findings first for the report card.
-        usort($findings, fn (Finding $a, Finding $b): int => $a->severity->rank() <=> $b->severity->rank());
+        usort($findings, static fn (Finding $a, Finding $b): int => $a->severity->rank() <=> $b->severity->rank());
 
         return new ScanResult(
             grade: Grade::fromFindings($findings),

@@ -17,7 +17,9 @@ use Throwable;
  */
 final readonly class TelescopeExposedCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     public function id(): string
     {
@@ -63,11 +65,10 @@ final readonly class TelescopeExposedCheck implements Check
             checkId: $this->id(),
             severity: Severity::High,
             title: 'Telescope is reachable without authentication',
-            explanation: 'The Telescope dashboard is open at '.$target->url('telescope')
-                .'. It records every request, database query, job, and mail — often '
-                .'including credentials and personal data in the payloads.',
-            fix: 'Restrict Telescope with the TelescopeServiceProvider gate, or disable it in '
-                .'production (TELESCOPE_ENABLED=false). Never leave it open to the internet.',
+            explanation: 'The Telescope dashboard is open at '.$target->url('telescope').'. It records every'
+            .' request, database query, job, and mail — often including credentials and personal data in the payloads.',
+            fix: 'Restrict Telescope with the TelescopeServiceProvider gate, or disable it in production'
+            .' (TELESCOPE_ENABLED=false). Never leave it open to the internet.',
             evidence: 'Telescope UI served at telescope/requests.',
         );
     }

@@ -18,7 +18,9 @@ use Throwable;
  */
 final readonly class ComposerLockExposedCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     public function id(): string
     {
@@ -59,12 +61,10 @@ final readonly class ComposerLockExposedCheck implements Check
             checkId: $this->id(),
             severity: Severity::Medium,
             title: 'Your composer.lock is publicly readable',
-            explanation: 'The file at '.$target->url('composer.lock').' lists the exact '
-                .'version of every PHP dependency in your app. Attackers use it to find '
-                .'dependencies with known vulnerabilities to target.',
-            fix: 'Ensure your web root is the public/ directory so project files like '
-                .'composer.lock and composer.json are never served. Block them at the web '
-                .'server as defense in depth.',
+            explanation: 'The file at '.$target->url('composer.lock').' lists the exact version of every PHP'
+            .' dependency in your app. Attackers use it to find dependencies with known vulnerabilities to target.',
+            fix: 'Ensure your web root is the public/ directory so project files like composer.lock and composer.json'
+            .' are never served. Block them at the web server as defense in depth.',
             evidence: 'Valid composer.lock JSON returned.',
         );
     }

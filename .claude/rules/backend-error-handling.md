@@ -6,31 +6,33 @@ globs: "**/*.php"
 
 # Error Handling (HTTP Boundary)
 
-The Domain layer raises exceptions and the Application layer lets them surface; this rule covers the **Infrastructure/HTTP boundary** — where to catch and how to transform them into responses.
+The Domain layer raises exceptions and the Application layer lets them surface; this rule covers the *
+*Infrastructure/HTTP boundary** — where to catch and how to transform them into responses.
 
 Keep controllers thin. Let Laravel handle unexpected errors. Only catch when transforming the response.
 
 ## When to Catch
 
-| Scenario | Catch? | Pattern |
-|----------|--------|---------|
-| Not found → JSON 404 | Yes | `catch (EntityNotFound $e) → json 404` |
-| Validation | No | Form Requests / `$request->validate()` (auto 422) |
-| Webhook / external callback | Yes | Log failure, then re-throw |
-| Everything else | No | Let bubble to Laravel handler |
+| Scenario                    | Catch? | Pattern                                           |
+|-----------------------------|--------|---------------------------------------------------|
+| Not found → JSON 404        | Yes    | `catch (EntityNotFound $e) → json 404`            |
+| Validation                  | No     | Form Requests / `$request->validate()` (auto 422) |
+| Webhook / external callback | Yes    | Log failure, then re-throw                        |
+| Everything else             | No     | Let bubble to Laravel handler                     |
 
 ## Exception → HTTP Mapping
 
-| Exception | Status |
-|-----------|--------|
-| `*NotFound` (extends `RuntimeException`) | 404 |
-| `DomainException` / `InvalidArgumentException` | 422 |
-| `abort(403)` | 403 |
-| Uncaught `\Throwable` | 500 (auto) |
+| Exception                                      | Status     |
+|------------------------------------------------|------------|
+| `*NotFound` (extends `RuntimeException`)       | 404        |
+| `DomainException` / `InvalidArgumentException` | 422        |
+| `abort(403)`                                   | 403        |
+| Uncaught `\Throwable`                          | 500 (auto) |
 
 ## Patterns
 
-- **API**: catch specific domain exceptions → JSON `{"error": "message"}` with status code. The backend is a JSON API consumed by the React SPA (react-router-dom) — no Blade/flash/redirect responses.
+- **API**: catch specific domain exceptions → JSON `{"error": "message"}` with status code. The backend is a JSON API
+  consumed by the React SPA (react-router-dom) — no Blade/flash/redirect responses.
 - **Auth**: `abort(403)` for inline checks — no custom catch.
 
 ## Anti-Patterns

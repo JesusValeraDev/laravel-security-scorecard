@@ -6,7 +6,8 @@ globs:
 
 # Typed DTOs over Array Shapes
 
-Use `final readonly class` DTOs instead of `@phpstan-type array{...}` shapes (or bare `array $data` params) when data crosses class boundaries.
+Use `final readonly class` DTOs instead of `@phpstan-type array{...}` shapes (or bare `array $data` params) when data
+crosses class boundaries.
 
 ## Naming Convention
 
@@ -17,7 +18,8 @@ Use `final readonly class` DTOs instead of `@phpstan-type array{...}` shapes (or
 ## Rule
 
 - When data flows through **2+ methods** or is passed to **another class**, create a `final readonly class` DTO.
-- `@phpstan-type array{...}` is only acceptable for single-method local use (e.g. the return type of a private method consumed in one place within the same class).
+- `@phpstan-type array{...}` is only acceptable for single-method local use (e.g. the return type of a private method
+  consumed in one place within the same class).
 - Never use `@phpstan-import-type` — if a type must be shared, it must be a class.
 
 ## Why
@@ -45,7 +47,8 @@ final readonly class ImportScorecardTransfer {
 
 ## Boundary Conversion
 
-When data enters the module as an untyped array (e.g. from an external API), convert at the boundary with a static `fromArray()` factory:
+When data enters the module as an untyped array (e.g. from an external API), convert at the boundary with a static
+`fromArray()` factory:
 
 ```php
 public static function fromArray(array $data): self

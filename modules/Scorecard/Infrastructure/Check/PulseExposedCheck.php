@@ -17,7 +17,9 @@ use Throwable;
  */
 final readonly class PulseExposedCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     public function id(): string
     {
@@ -64,11 +66,9 @@ final readonly class PulseExposedCheck implements Check
             checkId: $this->id(),
             severity: Severity::High,
             title: 'Pulse is reachable without authentication',
-            explanation: 'The Pulse dashboard is open at '.$target->url('pulse').'. It reveals '
-                .'application performance internals — slow queries and requests, exceptions, '
-                .'queue throughput, and currently active users.',
-            fix: 'Restrict Pulse with the "viewPulse" gate in your PulseServiceProvider so '
-                .'only authorized users can reach /pulse.',
+            explanation: 'The Pulse dashboard is open at '.$target->url('pulse').'. It reveals application'
+            .' performance internals - slow queries and requests, exceptions, queue throughput, and currently active users.',
+            fix: 'Restrict Pulse with the "viewPulse" gate in your PulseServiceProvider so only authorized users can reach /pulse.',
             evidence: 'Pulse dashboard served at /pulse.',
         );
     }

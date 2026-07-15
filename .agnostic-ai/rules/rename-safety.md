@@ -32,19 +32,19 @@ Use the deterministic sweep script (don't hand-craft the rg variants — see the
 .claude/skills/rename-sweep/check.sh inventory old-name old-names
 ```
 
-| Layer              | What to grep                                                  |
-|--------------------|---------------------------------------------------------------|
-| Backend code       | class / namespace / method / property names                   |
-| API call sites     | literal URL paths in `*.ts`/`*.tsx` (`/old-name`, `fetch`)    |
-| Route helpers      | `route('old.name')`, `->name('old...')`, named-route lookups  |
-| Frontend stores    | Zustand store names, action names, endpoint strings           |
-| i18n keys          | translation keys + values in all 5 locale files (en/es/fr/de/ar) |
-| Seeders/factories  | factory names, seeded literal strings                         |
-| DB schema          | table names, column names, enum values, index names           |
-| Serialized data    | queued job class names, polymorphic `*_type` values, casts    |
-| Events/broadcast   | event class names, broadcast channel strings                  |
-| Cache keys         | `Cache::remember('old-key', ...)` literals                    |
-| Routes/config/env  | route names, env vars, config keys, `.env.example`            |
+| Layer             | What to grep                                                     |
+|-------------------|------------------------------------------------------------------|
+| Backend code      | class / namespace / method / property names                      |
+| API call sites    | literal URL paths in `*.ts`/`*.tsx` (`/old-name`, `fetch`)       |
+| Route helpers     | `route('old.name')`, `->name('old...')`, named-route lookups     |
+| Frontend stores   | Zustand store names, action names, endpoint strings              |
+| i18n keys         | translation keys + values in all 5 locale files (en/es/fr/de/ar) |
+| Seeders/factories | factory names, seeded literal strings                            |
+| DB schema         | table names, column names, enum values, index names              |
+| Serialized data   | queued job class names, polymorphic `*_type` values, casts       |
+| Events/broadcast  | event class names, broadcast channel strings                     |
+| Cache keys        | `Cache::remember('old-key', ...)` literals                       |
+| Routes/config/env | route names, env vars, config keys, `.env.example`               |
 
 Produce the inventory and confirm it before changing anything. Plural vs
 singular bites hardest - `manuscript` and `manuscripts` are different strings.

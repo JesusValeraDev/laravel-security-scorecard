@@ -47,7 +47,7 @@ final readonly class Target
 
         // parse_url keeps IPv6 literals bracketed ("[::1]"); store the bare address so
         // that IP-based guards can actually match it.
-        $host = trim(strtolower($parts['host']), '[]');
+        $host = strtolower(trim($parts['host'], '[]'));
 
         if (! self::isHostname($host) && filter_var($host, FILTER_VALIDATE_IP) === false) {
             throw new InvalidArgumentException('Enter a full domain, like myapp.com.');

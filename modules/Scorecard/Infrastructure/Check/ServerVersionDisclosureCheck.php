@@ -17,7 +17,9 @@ use Throwable;
  */
 final readonly class ServerVersionDisclosureCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     public function id(): string
     {
@@ -38,20 +40,20 @@ final readonly class ServerVersionDisclosureCheck implements Check
     public function run(Target $target): ?Finding
     {
         try {
-            $response = $this->client->get($target->url('/'));
+            $response = $this->client->get($target->url());
         } catch (Throwable) {
             return null;
         }
 
         $disclosed = [];
 
-        $server = (string) $response->header('Server');
+        $server = $response->header('Server');
         // A bare "nginx" or "cloudflare" is fine; a version number (digits) is the leak.
         if ($server !== '' && preg_match('/\d+\.\d+/', $server)) {
             $disclosed[] = 'Server: '.$server;
         }
 
-        $poweredBy = (string) $response->header('X-Powered-By');
+        $poweredBy = $response->header('X-Powered-By');
         if ($poweredBy !== '') {
             $disclosed[] = 'X-Powered-By: '.$poweredBy;
         }
@@ -64,12 +66,10 @@ final readonly class ServerVersionDisclosureCheck implements Check
             checkId: $this->id(),
             severity: Severity::Low,
             title: 'Server software version is disclosed in headers',
-            explanation: 'Response headers reveal specific software versions ('
-                .implode('; ', $disclosed).'). Attackers use this to look up known '
-                .'vulnerabilities for that exact version.',
-            fix: 'Suppress version banners: set server_tokens off (nginx) or ServerTokens '
-                .'Prod (Apache), and remove X-Powered-By (expose_php = Off, or strip it in '
-                .'middleware).',
+            explanation: 'Response headers reveal specific software versions ('.implode('; ', $disclosed).').'
+            .' Attackers use this to look up known vulnerabilities for that exact version.',
+            fix: 'Suppress version banners: set server_tokens off (nginx) or ServerTokens Prod (Apache), and remove'.
+            ' X-Powered-By (expose_php = Off, or strip it in middleware).',
             evidence: implode('; ', $disclosed),
         );
     }

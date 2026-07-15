@@ -2,26 +2,26 @@
 
 # Laravel Security Scorecard
 
-A passive, external security checkup for Laravel apps. Enter a URL and get a graded,
-shareable report card that flags common misconfigurations — exposed `.env`/`.git`,
-unauthenticated Telescope/Horizon/Pulse, the Ignition RCE endpoint, missing security
-headers — each with a plain-English explanation and the exact fix.
+A passive, external security checkup for Laravel apps. Enter a URL and get a graded report card that flags common
+misconfigurations — exposed `.env`/`.git`, unauthenticated Telescope/Horizon/Pulse, the Ignition RCE endpoint, missing
+security headers — each with a plain-English explanation and the exact fix.
 
-Every check is a non-invasive GET request a crawler could make anyway. The scanner
-never attempts exploitation. All analysis is static/rule-based — no AI at runtime.
+Every check is a non-invasive GET request a crawler could make anyway. The scanner never attempts exploitation. All
+analysis is static/rule-based — no AI at runtime.
 
 ## Stack
 
-| Layer     | Tech                                              |
-|-----------|---------------------------------------------------|
-| Backend   | Laravel 13, PHP 8.4+                              |
-| Structure | Modular monolith, hexagonal/DDD (`modules/`)      |
-| Frontend  | Livewire + Blade + Tailwind CSS 4                 |
-| Queue     | `sync` (free-tier; scans run in-request)          |
-| Database  | SQLite (local) / PostgreSQL (production)          |
-| Testing   | PHPUnit (Unit / Integration / Feature)            |
-| Quality   | Pint, Rector, PHPStan/Larastan (level max)        |
-| Deploy    | Laravel Cloud                                     |
+| Layer         | Tech                                            |
+|---------------|-------------------------------------------------|
+| Backend       | Laravel 13, PHP 8.4+                            |
+| Structure     | Modular monolith, hexagonal/DDD (`modules/`)    |
+| Frontend      | Livewire + Blade + Tailwind CSS 4               |
+| Queue         | `sync` (scans run inline, in-request)           |
+| Database      | None — stateless; results live only on the page |
+| Cache/Session | `file` (no DB, no Redis)                        |
+| Testing       | PHPUnit (Unit / Integration / Feature)          |
+| Quality       | Pint, Rector, PHPStan/Larastan (level max)      |
+| Deploy        | Laravel Cloud                                   |
 
 ## Architecture
 
@@ -31,22 +31,19 @@ Source lives in `modules/`, autoloaded as `Modules\`. Each module has three laye
 modules/{Module}/
 ├── Domain/           # Pure PHP: value objects, contracts (no framework)
 ├── Application/      # Use cases (e.g. ScanRunner)
-└── Infrastructure/   # Laravel: checks, Eloquent, Livewire, jobs, providers
+└── Infrastructure/   # Laravel: checks, Eloquent, Livewire, jobs, mail, providers
 ```
 
-Dependency rule: Domain → Application → Infrastructure (never the reverse). Modules
-register in `bootstrap/providers.php`.
-
-- **`Scorecard`** — scanning, grading, report UI.
-- **`Shared`** — cross-cutting value objects (`Email`, `Uuid`).
+Dependency rule: Domain → Application → Infrastructure. Modules register in `bootstrap/providers.php`.
 
 ## Core concepts
 
 - **Check** (`Domain/Check/Check`) — one passive HTTP probe → `Finding` or null.
-  Concrete checks live in `Infrastructure/Check` and are assembled by the module
-  service provider, so `ScanRunner` (Application) depends only on the Domain contract.
-- **Scan** — a queued `RunScan` job runs the checks, streams per-check progress, and
-  persists an A–F graded result (Livewire polls it for a live view).
+  Concrete checks live in `Infrastructure/Check` and are assembled by the module service provider,
+  so `ScanRunner` (Application) depends only on the Domain contract.
+- **Scan** — the `ScanForm` Livewire component runs the checks inline (sync queue),
+  then holds the A–F graded result in its own component state and renders it on the same page.
+  Nothing is persisted; a page refresh clears the result and there is no shareable link.
 
 ## Guardrails (non-negotiable)
 
@@ -57,7 +54,7 @@ register in `bootstrap/providers.php`.
 ## Commands
 
 ```bash
-composer setup   # install + env + key + sqlite + migrate + build
+composer setup   # install + env + key + build (no DB)
 composer dev     # serve + logs + vite
 composer test    # pint + phpstan + phpunit
 composer fix     # Pint auto-fix
@@ -66,5 +63,5 @@ composer rector:fix
 
 ## Rules
 
-Backend conventions, testing, security, and coding-style rules auto-load from
-`.claude/rules/` (`backend-*`, plus cross-cutting `architecture.md`, `git-workflow.md`).
+Backend conventions, testing, security, and coding-style rules auto-load from `.claude/rules/` (`backend-*`, plus
+cross-cutting `architecture.md`, `git-workflow.md`).

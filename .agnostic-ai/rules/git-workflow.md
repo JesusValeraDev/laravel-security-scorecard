@@ -18,10 +18,10 @@ Version-controlled hooks in `.githooks/`. Install once after cloning:
 ./.githooks/install.sh
 ```
 
-| Hook           | Enforces                                                          |
-|----------------|-------------------------------------------------------------------|
-| `pre-commit`   | Pint + PHPStan on staged PHP files, ESLint + tsc on staged TS/TSX |
-| `commit-msg`   | Conventional commit format (see below)                            |
+| Hook         | Enforces                                                          |
+|--------------|-------------------------------------------------------------------|
+| `pre-commit` | Pint + PHPStan on staged PHP files, ESLint + tsc on staged TS/TSX |
+| `commit-msg` | Conventional commit format (see below)                            |
 
 ## Commit Message Format
 
@@ -69,26 +69,30 @@ docs: update architecture rules for Annotation module
 ## Feature Development Cycle
 
 ### 1. Planning
+
 - Understand requirements fully
 - Identify affected modules (backend + frontend)
 - Plan test strategy
 
 ### 2. Test-Driven Development
+
 - Write failing test first
 - Implement minimum code to pass
 - Refactor while green
 - Every feature must include:
-  - **Happy path** tests (expected success)
-  - **Edge case** tests (defaults, trimming, boundaries)
-  - **Sad path** tests (invalid input, not-found, errors)
+    - **Happy path** tests (expected success)
+    - **Edge case** tests (defaults, trimming, boundaries)
+    - **Sad path** tests (invalid input, not-found, errors)
 
 ### 3. Review
+
 - Self-review before PR
 - Check for SOLID violations
 - Verify no debug code remains
 - Verify translations added to all 5 languages (en, es, fr, de, ar)
 
 ### 4. Integration
+
 - Write descriptive commit message
 - Commit directly to `master` and push: `git push origin master`
 - Keep changes small so review can happen post-merge on trunk

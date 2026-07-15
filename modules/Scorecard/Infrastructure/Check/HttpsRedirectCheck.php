@@ -18,7 +18,9 @@ use Throwable;
  */
 final readonly class HttpsRedirectCheck implements Check
 {
-    public function __construct(private ProbeClient $client) {}
+    public function __construct(
+        private ProbeClient $client,
+    ) {}
 
     public function id(): string
     {
@@ -65,11 +67,10 @@ final readonly class HttpsRedirectCheck implements Check
             checkId: $this->id(),
             severity: Severity::Medium,
             title: 'HTTP is not redirected to HTTPS',
-            explanation: 'Requests to '.$httpUrl.' are served over plain HTTP instead of being '
-                .'redirected to HTTPS. Anyone on the network path can read or tamper with '
-                .'traffic, including session cookies and login credentials.',
-            fix: 'Force HTTPS at the web server or load balancer (a 301 redirect from http to '
-                .'https), and pair it with an HSTS header so browsers refuse to downgrade.',
+            explanation: 'Requests to '.$httpUrl.' are served over plain HTTP instead of being redirected to HTTPS.'
+            .' Anyone on the network path can read or tamper with traffic, including session cookies and login credentials.',
+            fix: 'Force HTTPS at the web server or load balancer (a 301 redirect from http to https), and pair it with'
+            .' an HSTS header so browsers refuse to downgrade.',
             evidence: 'http:// responded '.$status.($location !== '' ? ' → '.$location : ''),
         );
     }

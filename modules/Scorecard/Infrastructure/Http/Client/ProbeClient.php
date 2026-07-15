@@ -23,7 +23,9 @@ final readonly class ProbeClient
 
     private const int MAX_REDIRECTS = 5;
 
-    public function __construct(private PublicHostGuard $guard) {}
+    public function __construct(
+        private PublicHostGuard $guard,
+    ) {}
 
     /**
      * Follows redirects, because the checks that read headers, cookies and version banners

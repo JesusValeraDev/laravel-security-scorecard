@@ -58,6 +58,7 @@ public function it_throws_when_email_is_invalid(): void
 **Every new piece of code MUST ship with tests covering these three paths:**
 
 ### 1. Happy Path (required)
+
 Expected successful use case.
 
 ```php
@@ -79,6 +80,7 @@ public function test_create_annotation_with_valid_data(): void
 ```
 
 ### 2. Edge Cases (required when they exist)
+
 Boundaries, defaults, empty-but-valid inputs, trimming, type coercions.
 
 ```php
@@ -93,6 +95,7 @@ public function test_update_note_allows_empty_string(): void { /* clearing a not
 ```
 
 ### 3. Sad Path (required)
+
 Invalid inputs, not-found cases, authorization failures.
 
 ```php
@@ -235,4 +238,5 @@ Uses `RefreshDatabase` trait for real DB interaction.
 
 ## Coverage Configuration
 
-`phpunit.xml` `<source>` includes only `app/`; `modules/` is not in the default coverage source — run `./vendor/bin/phpunit --coverage-text` to see what is measured. No exclude block exists in `phpunit.xml`.
+`phpunit.xml` `<source>` includes only `app/`; `modules/` is not in the default coverage source — run
+`./vendor/bin/phpunit --coverage-text` to see what is measured. No exclude block exists in `phpunit.xml`.

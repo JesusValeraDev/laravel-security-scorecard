@@ -10,11 +10,11 @@ All console commands follow a **module-prefixed** naming convention to prevent c
 
 Pattern: `{Module}{Action}{Subject}Command`
 
-| Module | Example Class |
-|--------|--------------|
-| User | `UserPurgeInactiveCommand` |
-| Scorecard | `ScorecardReindexChaptersCommand` |
-| Planning | `PlanningRecalculateMilestonesCommand` |
+| Module    | Example Class                          |
+|-----------|----------------------------------------|
+| User      | `UserPurgeInactiveCommand`             |
+| Scorecard | `ScorecardReindexChaptersCommand`      |
+| Planning  | `PlanningRecalculateMilestonesCommand` |
 
 ## Signature Naming
 
@@ -36,6 +36,7 @@ Commands belong to their module — never under `app/Console/` (no code lives in
 ## Renaming
 
 Scheduling is internal — no alias/deprecation needed. Grep and update all references at once:
+
 ```
 grep -r "Schedule::" --include="*.php" app/ bootstrap/ modules/ routes/
 ```
