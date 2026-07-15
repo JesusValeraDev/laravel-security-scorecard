@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.1] - 2026-07-15
 
 ### Changed
 
@@ -26,15 +26,6 @@ All notable changes to this project are documented here. The format is based on
 - Tests migrated from Pest to PHPUnit.
 - Defaults tuned for zero-cost hosting: **no database**, `sync` queue, `file`
   cache/session, `log` mail.
-
-### Removed
-
-- **The database, entirely.** Dropped the `scans` table and all default Laravel
-  migrations (`users`/`sessions`/`cache`/`jobs`), the `ScanModel` Eloquent model, the
-  `RunScan` job, and the `ScanReport` component and `/r/{token}` route. Cache and
-  session now use the `file` driver; nothing is persisted.
-- The shareable graded report link (results now live only for the request that
-  produced them; a refresh clears them).
 
 ## [0.1.0] - 2026-07-11
 
